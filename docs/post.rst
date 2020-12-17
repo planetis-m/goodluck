@@ -105,7 +105,7 @@ A distinct id representing a separate item in the database. It's implemented as:
 
 
 That posses a restriction on the maximum number of entities that can exist and
-will be discussed :ref:`later<Entity management>`.
+will be discussed later_.
 
 Simple association
 ------------------
@@ -160,6 +160,8 @@ Using bit arithmetics to retrieve a key's version:
   echo ent1 in sm # false
   echo ent1.version # 1 - implementation detail: odd numbers mean occupied
 
+
+.. _later:
 
 This limits the available bits used for indexing. A wider unsigned type can be
 used if more entities are needed. In which case a ``SparseSet``, a data-structure
