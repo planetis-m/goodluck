@@ -20,8 +20,7 @@ more efficiently leveraging the CPU instruction and data caches.
 
 In the next paragraphs the design of a simple in-memory database is presented.
 I chose an ecommerce store as an example, mainly because everyone has used
-an eshop before and ECS resembles relational databases. Also making games are
-not my cup of tea, although I hang out in the #nim-gamedev channel :).
+an eshop before and ECS resembles relational databases.
 
 Components
 ==========
@@ -54,8 +53,8 @@ orders and products. These can be modelled with simple objects:
       inStock*: Natural
 
 
-Why the `array[N, char]` arrays, you might ask. Well using types that reference
-memory, such as `string` is entirely possible. However thats breaks the
+Why the ``array[N, char]`` arrays, you might ask. Well using types that reference
+memory, such as ``string`` is entirely possible. However thats breaks the
 promise of data locality, that the strict ECS pattern requires.
 
 Storing Components
@@ -81,7 +80,8 @@ also automatically memory managed. Writing destructor hooks is explained in this
 `document <https://nim-lang.github.io/Nim/destructors.html>`_.
 
 For each component I manually declare a corresponding enum value used to
-declare a "has-a" relationship, the usage is explored in a following section.
+declare a "has-a" relationship, the usage is explored in a following
+`section <Entity's signature>`_.
 
 .. code-block:: nim
 
@@ -109,7 +109,7 @@ will be discussed later.
 Simple association
 ------------------
 
-How would a customer be linked to their placed order? Using their `Entity` handle
+How would a customer be linked to their placed order? Using their ``Entity`` handle
 of course:
 
 .. code-block:: nim
@@ -129,7 +129,7 @@ Entity management
 
 The next unanswered question might be, how to verify if an Entity is referring to
 live data? To test an entity's validity I rely on a specialized data structure
-called a `SlotMap`. You can insert a value and will be given a unique key which
+called a ``SlotMap``. You can insert a value and will be given a unique key which
 can be used to retrieve this value.
 
 .. code-block:: nim
@@ -140,8 +140,8 @@ can be used to retrieve this value.
   echo ent # Entity(i: 0, v: 1)
 
 
-A `SlotMap` guarantees that keys to erased values won't work by incrementing a
-counter. Meaning that the `version` of the internal slot referring to the value
+A ``SlotMap`` guarantees that keys to erased values won't work by incrementing a
+counter. Meaning that the ``version`` of the internal slot referring to the value
 and that of the key's must be equal. When a value is deleted, the slot's version
 is incremented, invalidating the key.
 
@@ -161,14 +161,14 @@ Using bit arithmetics to retrieve a key's version:
 
 
 This limits the available bits used for indexing. A wider unsigned type can be
-used if more entities are needed. In which case a `SparseSet`, a data-structure
+used if more entities are needed. In which case a ``SparseSet``, a data-structure
 that keeps the values in a dense internal container, should be used for storing the
 components.
 
 Entity's signature
 ------------------
 
-The `SlotMap` is used to store a dense sequence of `set[HasComponent]` which is
+The ``SlotMap`` is used to store a dense sequence of ``set[HasComponent]`` which is
 the signature for each entity. A signature is a bit-set describing the component
 composition of an entity.
 
@@ -183,9 +183,9 @@ composition of an entity.
 Populating the database
 -----------------------
 
-The entity returned by the `SlotMap` can be used as an index for the "secondary"
+The entity returned by the ``SlotMap`` can be used as an index for the "secondary"
 component arrays. As you can imagine, these arrays can contain holes as entities
-are created and deleted, however the `SlotMap` is reusing entities as they become
+are created and deleted, however the ``SlotMap`` is reusing entities as they become
 available.
 
 .. code-block:: nim
@@ -202,9 +202,9 @@ available.
   echo ent3 # Entity(i: 0, v: 3)
 
 
-For example, to create a new entity that is a Customer insert `{HasCustomer}` in
-`signatures`. Then using the entity's index, set the corresponding item in the
-`db.customers` array.
+For example, to create a new entity that is a Customer insert ``{HasCustomer}`` in
+``signatures``. Then using the entity's index, set the corresponding item in the
+``db.customers`` array.
 
 .. code-block:: nim
 
@@ -218,8 +218,8 @@ For example, to create a new entity that is a Customer insert `{HasCustomer}` in
 Unconstrained Hiearchies
 ------------------------
 
-There is a one-to-many association between `Customer` and `Order` and it can be
-implemented efficiently with another component, the `Hierarchy`.
+There is a one-to-many association between ``Customer`` and ``Order`` and it can be
+implemented efficiently with another component, the ``Hierarchy``.
 
 .. code-block:: nim
 
@@ -231,12 +231,12 @@ implemented efficiently with another component, the `Hierarchy`.
 
 
 This is a standard textbook algorithm for prepending nodes in a linked list. It
-is adapted it to work with the `Entity` type instead of pointers. For example
+is adapted it to work with the ``Entity`` type instead of pointers. For example
 inserting a new order is as simple as:
 
 .. code-block:: nim
 
-  template `?=`(name, value): bool = (let name = value; name != invalidId)
+  template ``?=``(name, value): bool = (let name = value; name != invalidId)
   proc prepend*(h: var Array[Hierarchy], parentId, entity: Entity) =
     hierarchy.prev = invalidId
     hierarchy.next = parent.head
@@ -247,7 +247,7 @@ inserting a new order is as simple as:
 
 
 The database may contain multiple hierarchies, e.g.: to represent the many-to-many
-associations between `Order` and `Product`.
+associations between ``Order`` and ``Product``.
 
 .. code-block:: nim
 
@@ -260,7 +260,7 @@ associations between `Order` and `Product`.
 
 
 In order to achieve good memory efficiency and iteration speed, sorting the
-hiearchies by `parent` is needed. A `SparseSet` should be used in that case.
+hiearchies by ``parent`` is needed. A ``SparseSet`` should be used in that case.
 
 Mixins
 ------
@@ -281,8 +281,8 @@ Systems
 =======
 
 The missing piece of the puzzle, is the code that works on entities having a
-certain set of components. These are encoded another bit-set called `Query` and
-when iterating over all entities, the ones whose signature doesn't contain `Query`,
+certain set of components. These are encoded another bit-set called ``Query`` and
+when iterating over all entities, the ones whose signature doesn't contain ``Query``,
 are skipped.
 
 .. code-block:: nim
