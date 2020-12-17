@@ -61,8 +61,8 @@ Storing Components
 ------------------
 
 That's why everything is stored in linear arrays. Note that for now these are
-sparsely populated and thus space inefficient, their index is explained
-:ref:`later<Populating the database>`.
+sparsely populated and thus space inefficient, their index is explained in
+`Populating the database`_.
 
 .. code-block:: nim
 
@@ -81,8 +81,8 @@ also automatically memory managed. Writing destructor hooks is explained in this
 `document <https://nim-lang.github.io/Nim/destructors.html>`_.
 
 For each component I manually declare a corresponding enum value used to
-declare a "has-a" relationship, the usage is explored in a following
-:ref:`section<Entity's signature>`.
+declare a "has-a" relationship, the usage is explored in the section
+`Entity's signature`_.
 
 .. code-block:: nim
 
@@ -146,6 +146,8 @@ counter. Meaning that the ``version`` of the internal slot referring to the valu
 and that of the key's must be equal. When a value is deleted, the slot's version
 is incremented, invalidating the key.
 
+.. _later:
+
 This is implemented by storing the version in the higher bits of the number.
 Using bit arithmetics to retrieve a key's version:
 
@@ -160,8 +162,6 @@ Using bit arithmetics to retrieve a key's version:
   echo ent1 in sm # false
   echo ent1.version # 1 - implementation detail: odd numbers mean occupied
 
-
-.. _later:
 
 This limits the available bits used for indexing. A wider unsigned type can be
 used if more entities are needed. In which case a ``SparseSet``, a data-structure
