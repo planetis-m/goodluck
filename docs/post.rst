@@ -61,7 +61,8 @@ Storing Components
 ------------------
 
 That's why everything is stored in linear arrays. Note that for now these are
-sparsely populated and thus space inefficient, their index is discussed bellow.
+sparsely populated and thus space inefficient, their index is explained
+:ref:`later<Populating the database>`.
 
 .. code-block:: nim
 
@@ -81,7 +82,7 @@ also automatically memory managed. Writing destructor hooks is explained in this
 
 For each component I manually declare a corresponding enum value used to
 declare a "has-a" relationship, the usage is explored in a following
-`section <Entity's signature>`_.
+:ref:`section<Entity's signature>`.
 
 .. code-block:: nim
 
@@ -104,7 +105,7 @@ A distinct id representing a separate item in the database. It's implemented as:
 
 
 That posses a restriction on the maximum number of entities that can exist and
-will be discussed later.
+will be discussed :ref:`later<Entity management>`.
 
 Simple association
 ------------------
