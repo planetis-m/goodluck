@@ -154,14 +154,10 @@ Using bit arithmetics to retrieve a key's version:
 
   var sm: SlotMap[string]
   let ent1 = sm.incl("Pen")
-  let ent2 = sm.incl("Pineapple")
-  sm.del(ent1)
-  let ent3 = sm.incl("Apple")
 
+  sm.del(ent1)
   echo ent1 in sm # false
-  echo ent1 # Entity(i: 0, v: 1)
-  echo ent2 # Entity(i: 1, v: 1)
-  echo ent3 # Entity(i: 0, v: 3) # implementation detail: odd numbers mean occupied
+  echo ent1.version # 1 - implementation detail: odd numbers mean occupied
 
 
 This limits the available bits used for indexing. A wider unsigned type can be
@@ -184,12 +180,27 @@ composition of an entity.
       ...
 
 
-#### Populating the database
+Populating the database
+-----------------------
 
 The entity returned by the `SlotMap` can be used as an index for the "secondary"
 component arrays. As you can imagine, these arrays can contain holes as entities
 are created and deleted, however the `SlotMap` is reusing entities as they become
 available.
+
+.. code-block:: nim
+
+  var sm: SlotMap[string]
+  let ent1 = sm.incl("Pen")
+  let ent2 = sm.incl("Pineapple")
+  sm.del(ent1)
+  let ent3 = sm.incl("Apple")
+
+  echo ent1 in sm # false
+  echo ent1 # Entity(i: 0, v: 1)
+  echo ent2 # Entity(i: 1, v: 1)
+  echo ent3 # Entity(i: 0, v: 3)
+
 
 For example, to create a new entity that is a Customer insert `{HasCustomer}` in
 `signatures`. Then using the entity's index, set the corresponding item in the
