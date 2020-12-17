@@ -1,5 +1,5 @@
 An introduction to ECS by example
-=================================
+*********************************
 
 In this post I'm exploring the inner workings of an strict ECS implementation,
 discuss the costs/benefits of each choice with the reader and hopefully answer
@@ -29,28 +29,30 @@ Components
 Suppose this is a database of an ecommerce store, the main items are customers,
 orders and products. These can be modelled with simple objects:
 
-```nim
-type
-  Customer* = object
-    registered*, verified*: Time
-    username*, name*, surname*: array[128, char]
-    email*, password*: array[128, char]
-    phone*: array[25, char]
+.. code-block:: nim
 
-  Order* = object
-    placed*: Time
-    total*: Decimal
+  type
+    Customer* = object
+      registered*, verified*: Time
+      username*, name*, surname*: array[128, char]
+      email*, password*: array[128, char]
+      phone*: array[25, char]
 
-  LineItem* = object
-    amount*: Positive
-    subtotal*: Decimal
+    Order* = object
+      placed*: Time
+      total*: Decimal
 
-  Product* = object
-    name*: array[128, char]
-    description*: array[512, char]
-    price*, weight: Decimal
-    inStock*: Natural
-```
+    LineItem* = object
+      amount*: Positive
+      subtotal*: Decimal
+      product*: Entity
+
+    Product* = object
+      name*: array[128, char]
+      description*: array[512, char]
+      price*, weight: Decimal
+      inStock*: Natural
+
 
 Why the `array[N, char]` arrays, you might ask. Well using types that reference
 memory, such as `string` is entirely possible. However thats breaks the
@@ -62,41 +64,44 @@ Storing Components
 That's why everything is stored in linear arrays. Note that for now these are
 sparsely populated and thus space inefficient, their index is discussed bellow.
 
-```nim
-type
-  Array[T] = object
-    data: ptr array[maxEntities, T]
+.. code-block:: nim
 
-  Database* = object
-    customers*: Array[Customer]
-    orders*: Array[Order]
-    products*: Array[Product]
-```
+  type
+    Array[T] = object
+      data: ptr array[maxEntities, T]
+
+    Database* = object
+      customers*: Array[Customer]
+      orders*: Array[Order]
+      products*: Array[Product]
+
 
 **Note**: In Nim it's easy to create a custom fixed-size heap array, which is
 also automatically memory managed. Writing destructor hooks is explained in this
-[document](https://nim-lang.github.io/Nim/destructors.html).
+`document <https://nim-lang.github.io/Nim/destructors.html>`_.
 
 For each component I manually declare a corresponding enum value used to
 declare a "has-a" relationship, the usage is explored in a following section.
 
-```nim
-type
-  HasComponent* = enum
-    HasCustomer,
-    HasOrder,
-    HasLineItem,
-    HasProduct,
-```
+.. code-block:: nim
+
+  type
+    HasComponent* = enum
+      HasCustomer,
+      HasOrder,
+      HasLineItem,
+      HasProduct,
+
 
 Entities
 ========
 
 A distinct id representing a separate item in the database. It's implemented as:
 
-```nim
-type Entity* = distinct uint16
-```
+.. code-block:: nim
+
+  type Entity* = distinct uint16
+
 
 That posses a restriction on the maximum number of entities that can exist and
 will be discussed later.
@@ -107,12 +112,13 @@ Simple association
 How would a customer be linked to their placed order? Using their `Entity` handle
 of course:
 
-```nim
-type
-  Order* = object
-    ...
-    customer*: Entity # one-to-one association
-```
+.. code-block:: nim
+
+  type
+    Order* = object
+      ...
+      customer*: Entity # one-to-one association
+
 
 However this requires linear time complexity in order to answer queries such as
 "fetch me all the past orders a customer has made", I describe how to achieve
@@ -126,10 +132,13 @@ live data? To test an entity's validity I rely on a specialized data structure
 called a `SlotMap`. You can insert a value and will be given a unique key which
 can be used to retrieve this value.
 
-```nim
-var sm: SlotMap[string]
-let ent: Entity = sm.incl("Banana")
-```
+.. code-block:: nim
+
+  var sm: SlotMap[string]
+  let ent: Entity = sm.incl("Banana")
+
+  echo ent # Entity(i: 0, v: 1)
+
 
 A `SlotMap` guarantees that keys to erased values won't work by incrementing a
 counter. Meaning that the `version` of the internal slot referring to the value
@@ -139,23 +148,21 @@ is incremented, invalidating the key.
 This is implemented by storing the version in the higher bits of the number.
 Using bit arithmetics to retrieve a key's version:
 
-```nim
-template idx*(e: Entity): int = e.int and indexMask
-template version(e: Entity): untyped = e.uint16 shr indexBits and versionMask
-proc `$`*(e: Entity): string =
-  "Entity(i: " & $e.idx & ", v: " & $e.version & ")"
+.. code-block:: nim
 
-var sm: SlotMap[string]
-let ent1 = sm.incl("Pen")
-let ent2 = sm.incl("Pineapple")
-sm.del(ent1)
-let ent3 = sm.incl("Apple")
+  template version(e: Entity): untyped = e.uint16 shr indexBits and versionMask
 
-echo ent1 in sm # false
-echo ent1 # Entity(i: 0, v: 1)
-echo ent2 # Entity(i: 1, v: 1)
-echo ent3 # Entity(i: 0, v: 3) # implementation detail: odd numbers mean occupied
-```
+  var sm: SlotMap[string]
+  let ent1 = sm.incl("Pen")
+  let ent2 = sm.incl("Pineapple")
+  sm.del(ent1)
+  let ent3 = sm.incl("Apple")
+
+  echo ent1 in sm # false
+  echo ent1 # Entity(i: 0, v: 1)
+  echo ent2 # Entity(i: 1, v: 1)
+  echo ent3 # Entity(i: 0, v: 3) # implementation detail: odd numbers mean occupied
+
 
 This limits the available bits used for indexing. A wider unsigned type can be
 used if more entities are needed. In which case a `SparseSet`, a data-structure
@@ -169,15 +176,16 @@ The `SlotMap` is used to store a dense sequence of `set[HasComponent]` which is
 the signature for each entity. A signature is a bit-set describing the component
 composition of an entity.
 
-```nim
-type
-  Database* = object
-    signatures*: SlotMap[set[HasComponent]]
-    ...
-```
+.. code-block:: nim
+
+  type
+    Database* = object
+      signatures*: SlotMap[set[HasComponent]]
+      ...
+
 
 #### Populating the database
-#todo rewrite
+
 The entity returned by the `SlotMap` can be used as an index for the "secondary"
 component arrays. As you can imagine, these arrays can contain holes as entities
 are created and deleted, however the `SlotMap` is reusing entities as they become
@@ -187,11 +195,14 @@ For example, to create a new entity that is a Customer insert `{HasCustomer}` in
 `signatures`. Then using the entity's index, set the corresponding item in the
 `db.customers` array.
 
-```nim
-var db: Database
-let ent = db.signatures.incl({HasCustomer})
-db.customers[ent.idx] = Customer(registered: getTime(), username: "planetis")
-```
+.. code-block:: nim
+
+  template idx*(e: Entity): int = e.int and indexMask
+
+  var db: Database
+  let ent = db.signatures.incl({HasCustomer})
+  db.customers[ent.idx] = Customer(registered: getTime(), username: "planetis")
+
 
 Unconstrained Hiearchies
 ------------------------
@@ -199,40 +210,43 @@ Unconstrained Hiearchies
 There is a one-to-many association between `Customer` and `Order` and it can be
 implemented efficiently with another component, the `Hierarchy`.
 
-```nim
-type
-  Hierarchy* = object
-    head*: Entity # the first child, if any.
-    prev*, next*: Entity # the prev/next sibling in the list of children for the parent.
-    parent*: Entity
-```
+.. code-block:: nim
+
+  type
+    Hierarchy* = object
+      head*: Entity # the first child, if any.
+      prev*, next*: Entity # the prev/next sibling in the list of children for the parent.
+      parent*: Entity
+
 
 This is a standard textbook algorithm for prepending nodes in a linked list. It
 is adapted it to work with the `Entity` type instead of pointers. For example
 inserting a new order is as simple as:
 
-```nim
-template `?=`(name, value): bool = (let name = value; name != invalidId)
-proc prepend*(h: var Array[Hierarchy], parentId, entity: Entity) =
-  hierarchy.prev = invalidId
-  hierarchy.next = parent.head
-  if headSiblingId ?= parent.head:
-    assert headSibling.prev == invalidId
-    headSibling.prev = entity
-  parent.head = entity
-```
+.. code-block:: nim
+
+  template `?=`(name, value): bool = (let name = value; name != invalidId)
+  proc prepend*(h: var Array[Hierarchy], parentId, entity: Entity) =
+    hierarchy.prev = invalidId
+    hierarchy.next = parent.head
+    if headSiblingId ?= parent.head:
+      assert headSibling.prev == invalidId
+      headSibling.prev = entity
+    parent.head = entity
+
 
 The database may contain multiple hierarchies, e.g.: to represent the many-to-many
-associations between `Order` and `Product`. #todo rewrite
+associations between `Order` and `Product`.
 
-```nim
-type
-  Database* = object
-    ...
-    # Mappings
-    customerOrders*: Array[Hierarchy]
-    orderItems*: Array[Hierarchy]
-```
+.. code-block:: nim
+
+  type
+    Database* = object
+      ...
+      # Mappings
+      customerOrders*: Array[Hierarchy]
+      orderItems*: Array[Hierarchy]
+
 
 In order to achieve good memory efficiency and iteration speed, sorting the
 hiearchies by `parent` is needed. A `SparseSet` should be used in that case.
@@ -243,13 +257,14 @@ Mixins
 Components can be seen as a mixin idiom, classes that can be "included" rather
 "inherited". Prepending an order to the list of orders belonging to a customer:
 
-```nim
-proc mixCustomerOrder*(db: var Database, order, customer: Entity) =
-  db.signature[order].incl HasCustomerOrder
-  db.customerOrders[order.idx] = Hierarchy(head: invalidId, prev: invalidId,
-      next: invalidId, parent: customer)
-  if customer != invalidId: prepend(db, customer, order)
-```
+.. code-block:: nim
+
+  proc mixCustomerOrder*(db: var Database, order, customer: Entity) =
+    db.signature[order].incl HasCustomerOrder
+    db.customerOrders[order.idx] = Hierarchy(head: invalidId, prev: invalidId,
+        next: invalidId, parent: customer)
+    if customer != invalidId: prepend(db, customer, order)
+
 
 Systems
 =======
@@ -259,37 +274,38 @@ certain set of components. These are encoded another bit-set called `Query` and
 when iterating over all entities, the ones whose signature doesn't contain `Query`,
 are skipped.
 
+.. code-block:: nim
+
+  const Query = {HasOrder, HasCustomerOrder}
+  for entity, has in db.signatures.pairs:
+    if has * Query == Query:
+      let data = db.orders[order.idx]
+
+
 To fetch the list of orders a customer has made in the past:
 
-```nim
-iterator queryAll*(parent: Entity, query: set[HasComponent]): Entity =
-  var frontier = @[parent]
-  while frontier.len > 0:
-    let entity = frontier.pop()
-    if db.signature[entity] * query == query:
-      yield entity
-    var childId = hierarchy.head
-    while childId != invalidId:
-      frontier.add(childId)
-      childId = childHierarchy.next
+.. code-block:: nim
 
-const Query = {HasOrder, HasCustomerOrder}
-for order in queryAll(db.customerOrders, customer, Query):
-  let data = db.orders[order.idx]
-  # Serialize to JSON
-```
+  iterator queryAll*(parent: Entity, query: set[HasComponent]): Entity =
+    var frontier = @[parent]
+    while frontier.len > 0:
+      let entity = frontier.pop()
+      if db.signature[entity] * query == query:
+        yield entity
+      var childId = hierarchy.head
+      while childId != invalidId:
+        frontier.add(childId)
+        childId = childHierarchy.next
 
-```nim
-const Query = {HasOrder, HasCustomerOrder}
-for entity, has in db.signatures.pairs:
-  if has * Query == Query:
+  const Query = {HasOrder, HasCustomerOrder}
+  for order in queryAll(db.customerOrders, customer, Query):
     let data = db.orders[order.idx]
-```
-Systems can be seen accepting input from on
-Ordering a systems is important
+    # Serialize to JSON
 
-Iterating over a list of all live entities can be a performance issue when: a. there are
-The total iteration cost for all systems becomes too costly if the number of systems grows or the number of entities is large.
+
+The normal way to send data between systems is to store the data in components.
+The total iteration cost for all systems becomes an performance issue if the number of
+systems grows or the number of entities is large.
 
 Summary
 =======
