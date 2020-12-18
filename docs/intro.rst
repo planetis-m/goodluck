@@ -1,6 +1,8 @@
 An introduction to ECS by example
 *********************************
 
+:author: Antonis Geralis
+
 In this post I'm exploring the inner workings of an strict ECS implementation,
 discuss the costs/benefits of each choice with the reader and hopefully answer
 the question whether this programming pattern can be easily applied in domains
@@ -67,7 +69,7 @@ sparsely populated and thus space inefficient, their index is explained in
 .. code-block:: nim
 
   type
-    Array[T] = object
+    Array*[T] = object
       data: ptr array[maxEntities, T]
 
     Database* = object
@@ -123,7 +125,7 @@ of course:
 
 However this requires linear time complexity in order to answer queries such as
 "fetch me all the past orders a customer has made", I describe how to achieve
-that later.
+that in `Unconstrained Hiearchies`_.
 
 Entity management
 -----------------
@@ -160,7 +162,7 @@ Using bit arithmetics to retrieve a key's version:
 
   sm.del(ent1)
   echo ent1 in sm # false
-  echo ent1.version # 1 - implementation detail: odd numbers mean occupied
+  echo ent1.version # 1
 
 
 This limits the available bits used for indexing. A wider unsigned type can be
@@ -173,7 +175,7 @@ Entity's signature
 
 The ``SlotMap`` is used to store a dense sequence of ``set[HasComponent]`` which is
 the signature for each entity. A signature is a bit-set describing the component
-composition of an entity.
+composition of an entity. How this is used, is explained in `Systems`_.
 
 .. code-block:: nim
 
@@ -222,7 +224,8 @@ Unconstrained Hiearchies
 ------------------------
 
 There is a one-to-many association between ``Customer`` and ``Order`` and it can be
-implemented efficiently with another component, the ``Hierarchy``.
+implemented efficiently with another component, the ``Hierarchy``. Read `Systems`_ for
+how to traverse ``Hierarchy``.
 
 .. code-block:: nim
 
@@ -290,11 +293,40 @@ are skipped.
 
 .. code-block:: nim
 
-  const Query = {HasOrder, HasCustomerOrder}
-  for entity, has in db.signatures.pairs:
-    if has * Query == Query:
-      let data = db.orders[order.idx]
+  proc sysFetchOrders*(db: var World) =
+    const Query = {HasOrder, HasCustomerOrder}
+    for entity, has in db.signatures.pairs:
+      if has * Query == Query:
+        let data = db.orders[order.idx]
 
+
+The total iteration cost for all systems becomes an performance issue if the number of
+systems grows or the number of entities is large.
+
+Using tags influence processing
+-------------------------------
+
+ used to efficiently trigger further processing, tags to signal a result, or pass messages.
+
+.. code-block:: nim
+
+  type
+    HasComponent = enum
+      ...
+      # Order status
+      HasCompleted,
+      HasPlaced,
+      HasApproved,
+      HasDelivered
+
+using tags to be added/removed at run-time
+
+.. code-block:: nim
+
+  if order.placed - getTime() >= initDuration(hours = 3):
+    world.signature[order].excl HasApproved
+  elif :
+    world.signature[order].incl HasCompleted
 
 To fetch the list of orders a customer has made in the past:
 
@@ -318,16 +350,14 @@ To fetch the list of orders a customer has made in the past:
 
 
 The normal way to send data between systems is to store the data in components.
-The total iteration cost for all systems becomes an performance issue if the number of
-systems grows or the number of entities is large.
 
 Summary
 =======
-
-That is all, I hope you enjoyed the reading it as much as I enjoyed writing it.
 
 - ECS can be applied to many problem domains, but is useful when processing multitudes of data.
 - ECS requires hammering a lot of details however is extensible.
 - Nim provides plenty of flexibility to write code using most common programming paradigms,
   but is especially well-suited for the ECS pattern.
 - Destructors make it trivial to implement data-structures with custom allocators and the semantics you need.
+
+That is all, I hope you enjoyed the reading it as much as I enjoyed writing it.
