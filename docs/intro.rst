@@ -36,10 +36,6 @@ To model simple movement, the main components are movement and transformations.
       direction*: Vec2
       speed*: float32
 
-    Shake* = object # shakes the camera
-      duration*: float32
-      strength*: float32
-
     Transform2d* = object
       world*: Mat2d      # Matrix relative to the world
       translation*: Vec2 # local translation relative to the parent
@@ -51,7 +47,7 @@ Why use an ``array[10, Entity]``, you might ask. Well using types that reference
 memory, such as ``seq`` is entirely possible. However that breaks the
 promise of data locality, that the strict ECS pattern requires.
 
-Storing Components
+Storing components
 ------------------
 
 That's why everything is stored in linear arrays. Note that for now these are
@@ -66,11 +62,11 @@ sparsely populated and thus space inefficient, their index is explained in
 
     World* = object
       moves*: Array[Move]
-      shake*: UniquePtr[Shake]
+      cameraShake*: UniquePtr[Shake]
       transforms*: Array[Transform2d]
 
 
-Notice ``shake`` being a singleton component uses an ``UniquePtr`` instead.
+Notice ``cameraShake`` being a singleton component uses an ``UniquePtr`` instead.
 
 **Note**: In Nim it's easy to create a custom fixed-size heap array, which is
 also automatically memory managed. Writing destructor hooks is explained in this
@@ -318,15 +314,15 @@ Tags are added/removed at run-time without a cost:
 
 .. code-block:: nim
 
-proc update(game: var Game, entity: Entity) =
-  template transform: untyped = game.world.transforms[entity.idx]
-  template move: untyped = game.world.moves[entity.idx]
+  proc update(game: var Game, entity: Entity) =
+    template transform: untyped = game.world.transforms[entity.idx]
+    template move: untyped = game.world.moves[entity.idx]
 
-  if move.direction.x != 0.0 or move.direction.y != 0.0:
-    transform.translation.x += move.direction.x * move.speed
-    transform.translation.y += move.direction.y * move.speed
+    if move.direction.x != 0.0 or move.direction.y != 0.0:
+      transform.translation.x += move.direction.x * move.speed
+      transform.translation.y += move.direction.y * move.speed
 
-    world.signatures[entity].incl HasDirty
+      world.signatures[entity].incl HasDirty
 
 
 The normal way to send data between systems is to store the data in components.
@@ -359,8 +355,8 @@ Compute the current world position of each entity after it was changed by ``sysM
         transform.world = local
 
 
-``transform.world`` is then accessed by ``sysDraw`` in order to display each entity
-and so on.
+``transform.world`` is then accessed by ``sysDraw`` in order to display each
+entity to the screen and so on.
 
 Summary
 =======
