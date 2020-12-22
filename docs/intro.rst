@@ -20,43 +20,35 @@ is paramount, while remaining relatively unknown for smaller projects.
 The performance advantage over the traditional OOP approach, is achieved by
 more efficiently leveraging the CPU instruction and data caches.
 
-In the next paragraphs the design of a simple in-memory database is presented.
-I chose an ecommerce store as an example, mainly because everyone has used
-an eshop before and ECS resembles relational databases.
+In the next sections the design of a simple game is presented.
 
 Components
 ==========
 
-Suppose this is a database of an ecommerce store, the main items are customers,
-orders and products. These can be modelled with simple objects:
+To model simple movement, the main components are movement and transformations.
+``Transform2d`` is used to allow entities to be positioned in the world, while
+``Move`` to handle movevement. These can be modelled with plain objects:
 
 .. code-block:: nim
 
   type
-    Customer* = object
-      registered*, verified*: Time
-      username*, name*, surname*: array[128, char]
-      email*, password*: array[128, char]
-      phone*: array[25, char]
+    Move* = object
+      direction*: Vec2
+      speed*: float32
 
-    Order* = object
-      placed*: Time
-      total*: Decimal
+    Shake* = object # shakes the camera
+      duration*: float32
+      strength*: float32
 
-    LineItem* = object
-      amount*: Positive
-      subtotal*: Decimal
-      product*: Entity
+    Transform2d* = object
+      world*: Mat2d      # Matrix relative to the world
+      translation*: Vec2 # local translation relative to the parent
+      rotation*: Rad
+      scale*: Vec2
+      children*: array[10, Entity]
 
-    Product* = object
-      name*: array[128, char]
-      description*: array[512, char]
-      price*, weight: Decimal
-      inStock*: Natural
-
-
-Why the ``array[N, char]`` arrays, you might ask. Well using types that reference
-memory, such as ``string`` is entirely possible. However thats breaks the
+Why use an ``array[10, Entity]``, you might ask. Well using types that reference
+memory, such as ``seq`` is entirely possible. However that breaks the
 promise of data locality, that the strict ECS pattern requires.
 
 Storing Components
@@ -64,7 +56,7 @@ Storing Components
 
 That's why everything is stored in linear arrays. Note that for now these are
 sparsely populated and thus space inefficient, their index is explained in
-`Populating the database`_.
+`Populating the world`_.
 
 .. code-block:: nim
 
@@ -72,11 +64,13 @@ sparsely populated and thus space inefficient, their index is explained in
     Array*[T] = object
       data: ptr array[maxEntities, T]
 
-    Database* = object
-      customers*: Array[Customer]
-      orders*: Array[Order]
-      products*: Array[Product]
+    World* = object
+      moves*: Array[Move]
+      shake*: UniquePtr[Shake]
+      transforms*: Array[Transform2d]
 
+
+Notice ``shake`` being a singleton component uses an ``UniquePtr`` instead.
 
 **Note**: In Nim it's easy to create a custom fixed-size heap array, which is
 also automatically memory managed. Writing destructor hooks is explained in this
@@ -90,16 +84,15 @@ declare a "has-a" relationship, the usage is explored in the section
 
   type
     HasComponent* = enum
-      HasCustomer,
-      HasOrder,
-      HasLineItem,
-      HasProduct,
+      HasMove,
+      HasShake,
+      HasTransform2d
 
 
 Entities
 ========
 
-A distinct id representing a separate item in the database. It's implemented as:
+A distinct id representing a separate item in the world. It's implemented as:
 
 .. code-block:: nim
 
@@ -109,22 +102,26 @@ A distinct id representing a separate item in the database. It's implemented as:
 That posses a restriction on the maximum number of entities that can exist and
 will be discussed later_.
 
-Simple association
-------------------
+Association
+-----------
 
-How would a customer be linked to their placed order? Using their ``Entity`` handle
+Transforms can have child transforms attached to them. This is used to group
+entities into larger wholes (e.g. a character is a hierarchy of body parts).
+A scene graph provides a method to transform a child node transform with
+respect to its parent node transform.
+
+How would a child be linked to their parent? Using their ``Entity`` handle
 of course:
 
 .. code-block:: nim
 
   type
-    Order* = object
+    Transform2d* = object
       ...
-      customer*: Entity # one-to-one association
+      children*: array[10, Entity]
 
 
-However this requires linear time complexity in order to answer queries such as
-"fetch me all the past orders a customer has made", I describe how to achieve
+However this sets a hard limit in the number of children, I describe how to overcome
 that in `Unconstrained Hiearchies`_.
 
 Entity management
@@ -145,13 +142,13 @@ can be used to retrieve this value.
 
 A ``SlotMap`` guarantees that keys to erased values won't work by incrementing a
 counter. Meaning that the ``version`` of the internal slot referring to the value
-and that of the key's must be equal. When a value is deleted, the slot's version
+and that of the key's, must be equal. When a value is deleted, the slot's version
 is incremented, invalidating the key.
 
 .. _later:
 
 This is implemented by storing the version in the higher bits of the number.
-Using bit arithmetics to retrieve a key's version:
+Using bitwise operations to retrieve a key's version:
 
 .. code-block:: nim
 
@@ -174,19 +171,19 @@ Entity's signature
 ------------------
 
 The ``SlotMap`` is used to store a dense sequence of ``set[HasComponent]`` which is
-the signature for each entity. A signature is a bit-set describing the component
+the signature for each entity. A signature is a bitset describing the component
 composition of an entity. How this is used, is explained in `Systems`_.
 
 .. code-block:: nim
 
   type
-    Database* = object
+    World* = object
       signatures*: SlotMap[set[HasComponent]]
       ...
 
 
-Populating the database
------------------------
+Populating the world
+--------------------
 
 The entity returned by the ``SlotMap`` can be used as an index for the "secondary"
 component arrays. As you can imagine, these arrays can contain holes as entities
@@ -207,42 +204,43 @@ available.
   echo ent3 # Entity(i: 0, v: 3)
 
 
-For example, to create a new entity that is a Customer insert ``{HasCustomer}`` in
-``signatures``. Then using the entity's index, set the corresponding item in the
-``db.customers`` array.
+For example, to create a new entity that has ``Transform2d``, ``Move`` insert
+``{HasTransform2d, HasMove}`` in ``signatures``. Then using the entity's index,
+set the corresponding item in the ``world.transforms``, ``world.moves``  arrays.
 
 .. code-block:: nim
 
   template idx*(e: Entity): int = e.int and indexMask
 
-  var db: Database
-  let ent = db.signatures.incl({HasCustomer})
-  db.customers[ent.idx] = Customer(registered: getTime(), username: "planetis")
+  var world: World
+  let ent = world.signatures.incl({HasTransform2d, HasMove})
+  world.transforms[ent.idx] = Transform2D(world: mat2d(), translation: vec2(0, 0),
+      rotation: 0.Rad, scale: vec2(1, 1))
+  world.moves[ent.idx] = Move(direction: vec2(0, 0), speed: 10'f32)
 
 
 Unconstrained Hiearchies
 ------------------------
 
-There is a one-to-many association between ``Customer`` and ``Order`` and it can be
-implemented efficiently with another component, the ``Hierarchy``. Read `Systems`_ for
-how to traverse ``Hierarchy``.
+There is a one-to-many association between parent ``Transform2D`` and its children
+and can be implemented efficiently with another component, the ``Hierarchy``. Read
+`Systems`_ for how to traverse ``Hierarchy``.
 
 .. code-block:: nim
 
   type
     Hierarchy* = object
-      head*: Entity # the first child, if any.
+      head*: Entity        # the first child, if any.
       prev*, next*: Entity # the prev/next sibling in the list of children for the parent.
-      parent*: Entity
+      parent*: Entity      # the parent, if any.
 
 
 This is a standard textbook algorithm for prepending nodes in a linked list. It
-is adapted it to work with the ``Entity`` type instead of pointers. For example
-inserting a new order is as simple as:
+is adapted it to work with the ``Entity`` type instead of pointers.
 
 .. code-block:: nim
 
-  template ``?=``(name, value): bool = (let name = value; name != invalidId)
+  template `?=`(name, value): bool = (let name = value; name != invalidId)
   proc prepend*(h: var Array[Hierarchy], parentId, entity: Entity) =
     hierarchy.prev = invalidId
     hierarchy.next = parent.head
@@ -252,17 +250,16 @@ inserting a new order is as simple as:
     parent.head = entity
 
 
-The database may contain multiple hierarchies, e.g.: to represent the many-to-many
-associations between ``Order`` and ``Product``.
+There can be multiple hierarchy arrays, e.g. one for the model and another for
+entity scene graphs.
 
 .. code-block:: nim
 
   type
-    Database* = object
+    World* = object
       ...
-      # Mappings
-      customerOrders*: Array[Hierarchy]
-      orderItems*: Array[Hierarchy]
+      modelSpace*: Array[Hierarchy]
+      worldSpace*: Array[Hierarchy]
 
 
 In order to achieve good memory efficiency and iteration speed, sorting the
@@ -272,84 +269,98 @@ Mixins
 ------
 
 Components can be seen as a mixin idiom, classes that can be "included" rather
-"inherited". Prepending an order to the list of orders belonging to a customer:
+"inherited".
 
 .. code-block:: nim
 
-  proc mixCustomerOrder*(db: var Database, order, customer: Entity) =
-    db.signature[order].incl HasCustomerOrder
-    db.customerOrders[order.idx] = Hierarchy(head: invalidId, prev: invalidId,
-        next: invalidId, parent: customer)
-    if customer != invalidId: prepend(db, customer, order)
+  proc mixMove*(world: var World, entity: Entity, direction: Vec2, speed: float32) =
+    world.signatures[order].incl HasMove
+    world.moves[entity.idx] = Move(direction: direction, speed: speed)
 
 
 Systems
 =======
 
 The missing piece of the puzzle, is the code that works on entities having a
-certain set of components. These are encoded another bit-set called ``Query`` and
+certain set of components. These are encoded another bitset called ``Query`` and
 when iterating over all entities, the ones whose signature doesn't contain ``Query``,
 are skipped.
 
 .. code-block:: nim
 
-  proc sysFetchOrders*(db: var World) =
-    const Query = {HasOrder, HasCustomerOrder}
-    for entity, has in db.signatures.pairs:
-      if has * Query == Query:
-        let data = db.orders[order.idx]
+  const Query = {HasTransform2d, HasMove}
+
+  proc sysMove*(game: var Game) =
+    for entity, signature in game.world.signatures.pairs:
+      if signature * Query == Query:
+        update(game, entity)
 
 
-The total iteration cost for all systems becomes an performance issue if the number of
-systems grows or the number of entities is large.
+The total iteration cost for all systems becomes a performance issue if the number of
+systems grows or the number of entities is large. More complex solutions are can be used
+to overcome this problem.
 
-Using tags influence processing
--------------------------------
+Tags
+----
 
- used to efficiently trigger further processing, tags to signal a result, or pass messages.
+Sometimes values are added to ``HasComponent`` without a companion component. They are
+used to efficiently trigger further processing or signal a result.
 
 .. code-block:: nim
 
   type
     HasComponent = enum
       ...
-      # Order status
-      HasCompleted,
-      HasPlaced,
-      HasApproved,
-      HasDelivered
+      HasDirty
 
-using tags to be added/removed at run-time
+
+Tags are added/removed at run-time without a cost:
 
 .. code-block:: nim
 
-  if order.placed - getTime() >= initDuration(hours = 3):
-    world.signature[order].excl HasApproved
-  elif :
-    world.signature[order].incl HasCompleted
+proc update(game: var Game, entity: Entity) =
+  template transform: untyped = game.world.transforms[entity.idx]
+  template move: untyped = game.world.moves[entity.idx]
 
-To fetch the list of orders a customer has made in the past:
+  if move.direction.x != 0.0 or move.direction.y != 0.0:
+    transform.translation.x += move.direction.x * move.speed
+    transform.translation.y += move.direction.y * move.speed
+
+    world.signatures[entity].incl HasDirty
+
+
+The normal way to send data between systems is to store the data in components.
+Compute the current world position of each entity after it was changed by ``sysMove``:
 
 .. code-block:: nim
+
+  const Query = {HasTransform2d, HasHierarchy, HasDirty}
 
   iterator queryAll*(parent: Entity, query: set[HasComponent]): Entity =
     var frontier = @[parent]
     while frontier.len > 0:
       let entity = frontier.pop()
-      if db.signature[entity] * query == query:
+      if db.signatures[entity] * query == query:
         yield entity
       var childId = hierarchy.head
       while childId != invalidId:
         frontier.add(childId)
         childId = childHierarchy.next
 
-  const Query = {HasOrder, HasCustomerOrder}
-  for order in queryAll(db.customerOrders, customer, Query):
-    let data = db.orders[order.idx]
-    # Serialize to JSON
+  proc sysTransform2d*(game: var Game) =
+    for entity in queryAll(game.world, game.camera, Query):
+      world.signatures[entity].excl HasDirty
+
+      let local = compose(transform.scale, transform.rotation, transform.translation)
+      if parentId ?= hierarchy.parent:
+        template parentTransform: untyped = world.transforms[parentId.idx]
+        transform.world = parentTransform.world * local
+      else:
+        transform.world = local
 
 
-The normal way to send data between systems is to store the data in components.
+``transform.world`` is then accessed by ``sysDraw`` in order to display each entity
+and so on.
 
 Summary
 =======
