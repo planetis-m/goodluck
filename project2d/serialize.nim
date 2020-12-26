@@ -1,5 +1,5 @@
 import
-  gametypes, slotmap, vmath, heaparray, std/streams,
+  gametypes, slottables, vmath, heaparrays, std/streams,
   bingo, bingo/marshal_smartptrs, fusion/smartptrs
 from typetraits import distinctBase
 
@@ -13,12 +13,12 @@ proc storeToBin*(s: Stream; w: World) =
   for v in w.fields:
     when v is Array:
       var len = 0
-      for _, has in w.signature.pairs:
-        if components[i] in has: inc(len)
+      for _, signature in w.signature.pairs:
+        if components[i] in signature: inc(len)
       write(s, int64(len))
-      for entity, has in w.signature.pairs:
-        if components[i] in has:
-          write(s, entity.idx.uint16)
+      for entity, signature in w.signature.pairs:
+        if components[i] in signature:
+          write(s, entity.idx.EntityImpl)
           storeToBin(s, v[entity.idx])
       inc(i)
     else:
@@ -28,7 +28,8 @@ proc initFromBin*[T](dst: var Array[T]; s: Stream) =
   let len = readInt64(s)
   dst.clear()
   for i in 0 ..< len:
-    let idx = readUint16(s)
+    var idx: EntityImpl
+    read(s, idx)
     initFromBin(dst[idx], s)
 
 proc save*(game: Game) =

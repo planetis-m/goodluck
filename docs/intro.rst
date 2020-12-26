@@ -133,6 +133,7 @@ can be used to retrieve this value.
   var sm: SlotMap[string]
   let ent: Entity = sm.incl("Banana")
 
+  assert sm[ent] == "Banana"
   echo ent # Entity(i: 0, v: 1)
 
 
@@ -202,7 +203,7 @@ available.
 
 For example, to create a new entity that has ``Transform2d``, ``Move`` insert
 ``{HasTransform2d, HasMove}`` in ``signatures``. Then using the entity's index,
-set the corresponding item in the ``world.transforms``, ``world.moves``  arrays.
+set the corresponding items in the ``world.transforms``, ``world.moves``  arrays.
 
 .. code-block:: nim
 

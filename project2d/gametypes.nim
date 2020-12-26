@@ -1,5 +1,5 @@
-import sdlpriv, vmath, entitytype, slotmap, heaparray, fusion/smartptrs
-export entitytype
+import sdlpriv, vmath, entities, slottables, heaparrays, fusion/smartptrs
+export entities
 
 type
   Input* = enum
@@ -13,7 +13,6 @@ type
     HasFresh,
     HasHierarchy,
     HasMove,
-    HasPrevious,
     HasShake,
     HasTransform2d
 
@@ -43,11 +42,6 @@ type
     direction*: Vec2
     speed*: float32
 
-  Previous* = object
-    position*: Point2 # position at the previous physics state
-    rotation*: Rad    # rotation at the previous physics state
-    scale*: Vec2      # scale at the previous physics state
-
   Shake* = object
     duration*: float32
     strength*: float32
@@ -59,14 +53,13 @@ type
     scale*: Vec2       # local scale relative to the parent
 
   World* = object
-    signature*: SlotMap[set[HasComponent]]
+    signature*: SlotTable[set[HasComponent]]
 
     collide*: Array[Collide]
     draw2d*: Array[Draw2d]
     fade*: Array[Fade]
     hierarchy*: Array[Hierarchy]
     move*: Array[Move]
-    previous*: Array[Previous]
     shake*: UniquePtr[Shake]
     transform*: Array[Transform2d]
 
