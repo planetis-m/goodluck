@@ -8,15 +8,6 @@ proc mixCollide*(world: var World, entity: Entity, size = vec2(0, 0)) =
   world.collide[entity.idx] = Collide(size: size,
         collision: Collision(other: invalidId))
 
-proc mixControlBall*(world: var World, entity: Entity) =
-  mixBody HasControlBall
-
-proc mixControlBrick*(world: var World, entity: Entity) =
-  mixBody HasControlBrick
-
-proc mixControlPaddle*(world: var World, entity: Entity) =
-  mixBody HasControlPaddle
-
 proc mixDirty*(world: var World, entity: Entity) =
   mixBody HasDirty
 

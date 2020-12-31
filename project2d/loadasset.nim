@@ -9,9 +9,6 @@ proc initFromJson*[T: distinct](dst: var T; p: var JsonParser) =
 proc loadAsset*(world: var World; entity, parent: Entity; p: var JsonParser) =
   dispatch(world, entity, p):
     proc onCollide(size = vec2(0, 0))
-    proc onControlBall
-    proc onControlBrick
-    proc onControlPaddle
     proc onDraw2d(width, height = 100'i32, color = [255'u8, 0, 255, 255])
     proc onFade(step = 0.0)
     proc onMove(direction = vec2(0, 0), speed = 10.0)

@@ -63,7 +63,7 @@ proc run(game: var Game) =
 
     let now = getMonoTime().ticks
 
-    game.update((now - lastTime) / 1_000_000_000)
+    game.update(float32(now - lastTime) / 1_000_000_000'f32)
     lastTime = now
 
 proc main =
