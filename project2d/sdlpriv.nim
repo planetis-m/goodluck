@@ -15,7 +15,7 @@ type
 var
   isSdlContextAlive: bool
 
-proc raiseSdl*(msg: string) {.noreturn.} =
+proc raiseSdl*(msg: string) {.noinline, noreturn.} =
   ## Raises a `SdlException` exception with message `msg`.
   raise newException(SdlException, msg)
 

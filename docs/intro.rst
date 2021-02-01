@@ -15,7 +15,7 @@ A pattern used in high-end game engines, simulations, visual FX, CAD/CAM and
 other programs. The acronym stands for Entity-Component-System and these are
 the building blocks of an ECS. This architecture uses composition, rather
 than inheritance. Generally used in top-tier applications where performance
-is paramount, while remaining relatively unknown for smaller projects.
+is paramount, while remaining relatively unknown for staller projects.
 
 The performance advantage over the traditional OOP approach, is achieved by
 more efficiently leveraging the CPU instruction and data caches.
@@ -42,6 +42,7 @@ To model simple movement, the main components are movement and transformations.
       rotation*: Rad
       scale*: Vec2
       children*: array[10, Entity]
+
 
 Why use an ``array[10, Entity]``, you might ask. Well using types that reference
 memory, such as ``seq`` is entirely possible. However that breaks the
@@ -125,19 +126,19 @@ Entity management
 
 The next unanswered question might be, how to verify if an Entity is referring to
 live data? To test an entity's validity I rely on a specialized data structure
-called a ``SlotMap``. You can insert a value and will be given a unique key which
+called a ``SlotTable``. You can insert a value and will be given a unique key which
 can be used to retrieve this value.
 
 .. code-block:: nim
 
-  var sm: SlotMap[string]
-  let ent: Entity = sm.incl("Banana")
+  var st: SlotTable[string]
+  let ent: Entity = st.incl("Banana")
 
-  assert sm[ent] == "Banana"
+  assert st[ent] == "Banana"
   echo ent # Entity(i: 0, v: 1)
 
 
-A ``SlotMap`` guarantees that keys to erased values won't work by incrementing a
+A ``SlotTable`` guarantees that keys to erased values won't work by incrementing a
 counter. Meaning that the ``version`` of the internal slot referring to the value
 and that of the key's, must be equal. When a value is deleted, the slot's version
 is incremented, invalidating the key.
@@ -151,11 +152,11 @@ Using bitwise operations to retrieve a key's version:
 
   template version(e: Entity): untyped = e.uint16 shr indexBits and versionMask
 
-  var sm: SlotMap[string]
-  let ent1 = sm.incl("Pen")
+  var st: SlotTable[string]
+  let ent1 = st.incl("Pen")
 
-  sm.del(ent1)
-  echo ent1 in sm # false
+  st.del(ent1)
+  echo ent1 in st # false
   echo ent1.version # 1
 
 
@@ -167,7 +168,7 @@ components.
 Entity's signature
 ------------------
 
-The ``SlotMap`` is used to store a dense sequence of ``set[HasComponent]`` which is
+The ``SlotTable`` is used to store a dense sequence of ``set[HasComponent]`` which is
 the signature for each entity. A signature is a bitset describing the component
 composition of an entity. How this is used, is explained in `Systems`_.
 
@@ -175,27 +176,27 @@ composition of an entity. How this is used, is explained in `Systems`_.
 
   type
     World* = object
-      signatures*: SlotMap[set[HasComponent]]
+      signatures*: SlotTable[set[HasComponent]]
       ...
 
 
 Populating the world
 --------------------
 
-The entity returned by the ``SlotMap`` can be used as an index for the "secondary"
+The entity returned by the ``SlotTable`` can be used as an index for the "secondary"
 component arrays. As you can imagine, these arrays can contain holes as entities
-are created and deleted, however the ``SlotMap`` is reusing entities as they become
+are created and deleted, however the ``SlotTable`` is reusing entities as they become
 available.
 
 .. code-block:: nim
 
-  var sm: SlotMap[string]
-  let ent1 = sm.incl("Pen")
-  let ent2 = sm.incl("Pineapple")
-  sm.del(ent1)
-  let ent3 = sm.incl("Apple")
+  var st: SlotTable[string]
+  let ent1 = st.incl("Pen")
+  let ent2 = st.incl("Pineapple")
+  st.del(ent1)
+  let ent3 = st.incl("Apple")
 
-  echo ent1 in sm # false
+  echo ent1 in st # false
   echo ent1 # Entity(i: 0, v: 1)
   echo ent2 # Entity(i: 1, v: 1)
   echo ent3 # Entity(i: 0, v: 3)
