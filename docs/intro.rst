@@ -15,7 +15,7 @@ A pattern used in high-end game engines, simulations, visual FX, CAD/CAM and
 other programs. The acronym stands for Entity-Component-System and these are
 the building blocks of an ECS. This architecture uses composition, rather
 than inheritance. Generally used in top-tier applications where performance
-is paramount, while remaining relatively unknown for staller projects.
+is paramount, while remaining relatively unknown for smaller projects.
 
 The performance advantage over the traditional OOP approach, is achieved by
 more efficiently leveraging the CPU instruction and data caches.
