@@ -3,7 +3,7 @@ from typetraits import supportsCopyMem
 
 type
   Array*[T] = object
-    data: ptr array[maxEntities, T]
+    data*: ptr array[maxEntities, T]
 
 proc `=destroy`*[T](x: var Array[T]) =
   if x.data != nil:

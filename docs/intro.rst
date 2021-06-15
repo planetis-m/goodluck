@@ -44,7 +44,7 @@ To model simple movement, the main components are movement and transformations.
       children*: array[10, Entity]
 
 
-Why use an ``array[10, Entity]``, you might ask. Well using types that reference
+Why use an `array[10, Entity]`:nim:, you might ask. Well using types that reference
 memory, such as ``seq`` is entirely possible. However that breaks the
 promise of data locality, that the strict ECS pattern requires.
 
@@ -168,7 +168,7 @@ components.
 Entity's signature
 ------------------
 
-The ``SlotTable`` is used to store a dense sequence of ``set[HasComponent]`` which is
+The ``SlotTable`` is used to store a dense sequence of `set[HasComponent]`:nim: which is
 the signature for each entity. A signature is a bitset describing the component
 composition of an entity. How this is used, is explained in `Systems`_.
 
@@ -203,7 +203,7 @@ available.
 
 
 For example, to create a new entity that has ``Transform2d``, ``Move`` insert
-``{HasTransform2d, HasMove}`` in ``signatures``. Then using the entity's index,
+`{HasTransform2d, HasMove}`:nim: in ``signatures``. Then using the entity's index,
 set the corresponding items in the ``world.transforms``, ``world.moves``  arrays.
 
 .. code-block:: nim
