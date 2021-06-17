@@ -1,7 +1,7 @@
 # Goodluck Nim port
 
 This is a port of [Goodluck](https://github.com/piesku/goodluck) to Nim.
-Check my post [Intro to ECS by example](docs/intro.rst) for an introduction to the ECS design pattern.
+Check my post [Intro to ECS by example](https://planetis-m.github.io/goodluck/intro.html) for an introduction to the ECS design pattern.
 It also incorporates various improvements done by me.
 
 
