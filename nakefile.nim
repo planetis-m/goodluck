@@ -3,9 +3,10 @@ import nake, std/strformat
 task "docs", "Generate documentation":
   # https://nim-lang.github.io/Nim/docgen.html
   let
+    name = "intro.rst"
     dir = "docs/"
-    src = dir / "intro.rst"
-    doc = dir / src.changeFileExt(".html")
+    src = "rstdocs" / name
+    doc = dir / name.changeFileExt(".html")
   if doc.needsRefresh(src):
     echo "Generating the docs..."
     direShell(nimExe,
