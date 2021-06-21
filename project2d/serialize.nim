@@ -3,26 +3,50 @@ import
   bingo, bingo/marshal_smartptrs, fusion/smartptrs
 from typetraits import distinctBase
 
-proc storeToBin*[T: distinct](s: Stream; x: T) = storeToBin(s, x.distinctBase)
+proc storeBin*[T: distinct](s: Stream; x: T) = storeBin(s, x.distinctBase)
 proc initFromBin[T: distinct](dst: var T; s: Stream) = initFromBin(dst.distinctBase, s)
 
-proc storeToBin*(s: Stream; w: World) =
-  const components = [HasCollide, HasDraw2d, HasFade, HasHierarchy,
-                      HasMove, HasPrevious, HasTransform2d]
-  var i = 0
-  for v in w.fields:
-    when v is Array:
-      var len = 0
-      for _, signature in w.signature.pairs:
-        if components[i] in signature: inc(len)
-      write(s, int64(len))
-      for entity, signature in w.signature.pairs:
-        if components[i] in signature:
-          write(s, entity.idx.EntityImpl)
-          storeToBin(s, v[entity.idx])
-      inc(i)
-    else:
-      storeToBin(s, v)
+type
+  SectionKind = enum
+    secUnknown
+    secSlotTable
+    secSparseSet
+    secSingleton
+    secArray
+
+  WrongSection = object of CatchableError
+
+proc raiseWrongSection*(expected: SectionKind) {.noinline, noreturn.} =
+  raise newException(WrongSection, "Section '" & $expected & "' expected.")
+
+template storeSlotSection(data) =
+  storeBin(s, secSlotTable)
+  storeBin(s, data)
+
+template storeSingleSection(data) =
+  storeBin(s, secSingleton)
+  storeBin(s, data)
+
+template storeArrSection(component, data) =
+  storeBin(s, secArray)
+  var len = 0
+  for _, signature in w.signature.pairs:
+    if component in signature: inc(len)
+  write(s, int64(len))
+  for entity, signature in w.signature.pairs:
+    if component in signature:
+      write(s, entity.idx.EntityImpl)
+      storeBin(s, data[entity.idx])
+
+proc storeBin*(s: Stream; w: World) =
+  storeSlotSection w.signature
+  storeArrSection HasCollide, w.collide
+  storeArrSection HasDraw2d, w.draw2d
+  storeArrSection HasFade, w.fade
+  storeArrSection HasHierarchy, w.hierarchy
+  storeArrSection HasMove, w.move
+  storeSingleSection w.shake
+  storeArrSection HasTransform2d, w.transform
 
 proc initFromBin*[T](dst: var Array[T]; s: Stream) =
   let len = readInt64(s)
@@ -32,12 +56,29 @@ proc initFromBin*[T](dst: var Array[T]; s: Stream) =
     read(s, idx)
     initFromBin(dst[idx], s)
 
-proc save*(game: Game) =
-  let fs = newFileStream("save1.bin", fmWrite)
-  if fs != nil:
-    try: storeBin(fs, game.world) finally: fs.close()
+proc loadSeperator*(s: Stream, expected: SectionKind) =
+  let section = binTo(s, SectionKind)
+  if section != expected:
+    raiseWrongSection(expected)
 
-proc load*(game: var Game) =
-  let fs = newFileStream("save1.bin")
-  if fs != nil:
-    try: loadBin(fs, game.world) finally: fs.close()
+template loadArrSection(dst) =
+  loadSeperator(s, secArray)
+  loadBin(s, dst)
+
+template loadSlotSection(dst) =
+  loadSeperator(s, secSlotTable)
+  loadBin(s, dst)
+
+template loadSingleSection(dst) =
+  loadSeperator(s, secSingleton)
+  loadBin(s, dst)
+
+proc initFromBin*(dst: var World; s: Stream) =
+  loadSlotSection dst.signature
+  loadArrSection dst.collide
+  loadArrSection dst.draw2d
+  loadArrSection dst.fade
+  loadArrSection dst.hierarchy
+  loadArrSection dst.move
+  loadSingleSection dst.shake
+  loadArrSection dst.transform

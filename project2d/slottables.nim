@@ -1,9 +1,10 @@
-import entities, heaparrays, bingo, std/streams
+import entities, bingo, std/streams
 
 type
   Entry*[T] = tuple
     e: Entity
     value: T
+
   SlotTable*[T] = object
     freeHead: int
     slots: seq[Entity]
@@ -89,12 +90,12 @@ iterator pairs*[T](x: SlotTable[T]): Entry[T] =
     yield x.data[i]
 
 # Serialization
-proc storeToBin*[T](s: Stream; a: SlotTable[T]) =
+proc storeBin*[T](s: Stream; a: SlotTable[T]) =
   write(s, int64(a.slots.len))
   for x in a.slots:
     write(s, x.version)
     if x.version mod 2 > 0:
-      storeToBin(s, a.data[x.idx].value)
+      storeBin(s, a.data[x.idx].value)
 
 proc initFromBin*[T](dst: var SlotTable[T]; s: Stream) =
   let len = s.readInt64()

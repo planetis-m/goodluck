@@ -28,9 +28,9 @@ proc update(game: var Game, entity: Entity) =
       draw2d.color[3])
   game.renderer.impl.fillRect(rectangle)
 
-proc sysDraw2d*(game: var Game, intrpl: float32) =
+proc sysDraw2d*(game: var Game) =
   game.renderer.impl.setDrawColor(game.clearColor[0], game.clearColor[1], game.clearColor[2])
   game.renderer.impl.clear()
   for entity, signature in game.world.signature.pairs:
     if signature * Query == Query:
-      update(game, entity, intrpl)
+      update(game, entity)

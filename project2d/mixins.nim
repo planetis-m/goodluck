@@ -33,12 +33,6 @@ proc mixMove*(world: var World, entity: Entity, direction = vec2(0, 0), speed = 
   mixBody HasMove
   world.move[entity.idx] = Move(direction: direction, speed: speed)
 
-proc mixPrevious*(world: var World, entity: Entity, position = point2(0, 0),
-      rotation = 0.Rad, scale = vec2(1, 1)) =
-  mixBody HasPrevious
-  world.previous[entity.idx] = Previous(position: position,
-        rotation: rotation, scale: scale)
-
 proc mixShake*(world: var World, entity: Entity, duration = 1'f32, strength = 0'f32) =
   mixBody HasShake
   world.shake = newUniquePtr(Shake(duration: duration, strength: strength))
