@@ -10,7 +10,6 @@ type
     HasDirty,
     HasDraw2d,
     HasFade,
-    HasFresh,
     HasHierarchy,
     HasMove,
     HasShake,

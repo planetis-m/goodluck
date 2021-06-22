@@ -20,9 +20,6 @@ proc mixFade*(world: var World, entity: Entity, step = 0'f32) =
   mixBody HasFade
   world.fade[entity.idx] = Fade(step: step)
 
-proc mixFresh*(world: var World, entity: Entity) =
-  mixBody HasFresh
-
 proc mixHierarchy*(world: var World, entity: Entity, parent = invalidId) =
   mixBody HasHierarchy
   world.hierarchy[entity.idx] = Hierarchy(head: invalidId, prev: invalidId,
@@ -44,4 +41,3 @@ proc mixTransform2d*(world: var World, entity: Entity, trworld = mat2d(), transl
         rotation: rotation, scale: scale)
   mixHierarchy(world, entity, parent)
   mixDirty(world, entity)
-  mixFresh(world, entity)

@@ -5,7 +5,7 @@ import
 
 proc initGame*(windowWidth, windowHeight: int32): Game =
   let sdlContext = sdlInit(InitVideo or InitEvents)
-  let window = newWindow("Breakout", SdlWindowPosCentered,
+  let window = newWindow("Project2d", SdlWindowPosCentered,
       SdlWindowPosCentered, windowWidth, windowHeight, SdlWindowShown)
   let renderer = newRenderer(window, -1, RendererAccelerated or RendererPresentVsync)
 
