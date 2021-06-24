@@ -3,7 +3,7 @@ from typetraits import supportsCopyMem
 
 type
   Array*[T] = object
-    data*: ptr array[maxEntities, T]
+    data: ptr array[maxEntities, T]
 
 proc `=destroy`*[T](x: var Array[T]) =
   if x.data != nil:
@@ -12,15 +12,15 @@ proc `=destroy`*[T](x: var Array[T]) =
     dealloc(x.data)
 proc `=copy`*[T](dest: var Array[T], src: Array[T]) {.error.}
 
-template initImpl(result: typed) =
+proc initArray*[T](): Array[T] =
   result.data = cast[typeof(result.data)](alloc(maxEntities * sizeof(T)))
 
-proc initArray*[T](): Array[T] =
-  initImpl(result)
-
-template get(x, i) =
+template checkInit() =
   when compileOption("boundChecks"):
     assert x.data != nil, "array not inititialized"
+
+template get(x, i) =
+  checkInit()
   x.data[i]
 
 proc `[]`*[T](x: Array[T]; i: Natural): lent T =
@@ -29,7 +29,7 @@ proc `[]`*[T](x: var Array[T]; i: Natural): var T =
   get(x, i)
 
 proc `[]=`*[T](x: var Array[T]; i: Natural; y: sink T) =
-  if x.data == nil: initImpl(x)
+  checkInit()
   x.data[i] = y
 
 proc clear*[T](x: Array[T]) =
@@ -38,3 +38,6 @@ proc clear*[T](x: Array[T]) =
       for i in 0..<maxEntities: reset(x[i])
 
 proc isNil*[T](x: Array[T]): bool = x.data == nil
+
+template toOpenArray*(x, first, last: typed): untyped =
+  toOpenArray(x.data, first, last)
