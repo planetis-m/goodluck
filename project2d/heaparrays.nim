@@ -37,7 +37,5 @@ proc clear*[T](x: Array[T]) =
     if x.data != nil:
       for i in 0..<maxEntities: reset(x[i])
 
-proc isNil*[T](x: Array[T]): bool = x.data == nil
-
 template toOpenArray*(x, first, last: typed): untyped =
   toOpenArray(x.data, first, last)
