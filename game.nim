@@ -1,6 +1,6 @@
 import
   std / [random, monotimes],
-  project2d / [sdlpriv, heaparrays, gametypes, blueprints, slottables, utils],
+  project2d / [sdlpriv, heaparrays, gametypes, blueprints, slottables, utils, serialize],
   project2d / systems / [collide, draw2d, fade, move, shake, transform2d, handleevents]
 
 proc initGame*(windowWidth, windowHeight: int32): Game =

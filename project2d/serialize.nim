@@ -1,6 +1,6 @@
 import
   gametypes, slottables, vmath, heaparrays, std/streams,
-  bingo, bingo/marshal_smartptrs, fusion/smartptrs
+  bingo
 from typetraits import distinctBase
 
 proc storeBin*[T: distinct](s: Stream; x: T) = storeBin(s, x.distinctBase)

@@ -147,8 +147,8 @@ window.addEventListener('DOMContentLoaded', main);
   
   <span class="Identifier">World</span><span class="Operator">*</span> <span class="Operator">=</span> <span class="Keyword">object</span>
     <span class="Identifier">moves</span><span class="Operator">*:</span> <span class="Identifier">Array</span><span class="Punctuation">[</span><span class="Identifier">Move</span><span class="Punctuation">]</span>
-    <span class="Identifier">cameraShake</span><span class="Operator">*:</span> <span class="Identifier">UniquePtr</span><span class="Punctuation">[</span><span class="Identifier">Shake</span><span class="Punctuation">]</span>
-    <span class="Identifier">transforms</span><span class="Operator">*:</span> <span class="Identifier">Array</span><span class="Punctuation">[</span><span class="Identifier">Transform2d</span><span class="Punctuation">]</span></pre><p>Notice <tt class="docutils literal"><span class="pre">cameraShake</span></tt> being a singleton component uses an <tt class="docutils literal"><span class="pre">UniquePtr</span></tt> instead.</p>
+    <span class="Identifier">cameraShake</span><span class="Operator">*:</span> <span class="Keyword">ref</span> <span class="Identifier">Shake</span>
+    <span class="Identifier">transforms</span><span class="Operator">*:</span> <span class="Identifier">Array</span><span class="Punctuation">[</span><span class="Identifier">Transform2d</span><span class="Punctuation">]</span></pre><p>Notice <tt class="docutils literal"><span class="pre">cameraShake</span></tt> being a singleton component uses a <tt class="docutils literal"><span class="pre">ref</span></tt> instead.</p>
 <p><strong>Note</strong>: In Nim it's easy to create a custom fixed-size heap array, which is also automatically memory managed. Writing destructor hooks is explained in this <a class="reference external" href="https://nim-lang.github.io/Nim/destructors.html">document</a>.</p>
 <p>For each component I manually declare a corresponding enum value used to declare a &quot;has-a&quot; relationship, the usage is explored in the section <a class="reference internal" href="#entity-s-signature">Entity's signature</a>.</p>
 <pre class="listing"><span class="Keyword">type</span>
@@ -290,7 +290,7 @@ window.addEventListener('DOMContentLoaded', main);
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2021-06-17 20:13:06 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2021-06-29 10:17:49 UTC</small>
       </div>
     </div>
   </div>

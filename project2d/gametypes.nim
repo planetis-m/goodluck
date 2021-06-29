@@ -1,4 +1,4 @@
-import sdlpriv, vmath, entities, slottables, heaparrays, fusion/smartptrs
+import sdlpriv, vmath, entities, slottables, heaparrays
 export entities
 
 type
@@ -59,7 +59,7 @@ type
     fade*: Array[Fade]
     hierarchy*: Array[Hierarchy]
     move*: Array[Move]
-    shake*: UniquePtr[Shake]
+    shake*: ref Shake
     transform*: Array[Transform2d]
 
   Game* = object

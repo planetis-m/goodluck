@@ -69,11 +69,11 @@ sparsely populated and thus space inefficient, their index is explained in
 
     World* = object
       moves*: Array[Move]
-      cameraShake*: UniquePtr[Shake]
+      cameraShake*: ref Shake
       transforms*: Array[Transform2d]
 
 
-Notice `cameraShake` being a singleton component uses an `UniquePtr` instead.
+Notice `cameraShake` being a singleton component uses a `ref` instead.
 
 **Note**: In Nim it's easy to create a custom fixed-size heap array, which is
 also automatically memory managed. Writing destructor hooks is explained in this

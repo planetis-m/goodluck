@@ -32,7 +32,7 @@ proc mixMove*(world: var World, entity: Entity, direction = vec2(0, 0), speed = 
 
 proc mixShake*(world: var World, entity: Entity, duration = 1'f32, strength = 0'f32) =
   mixBody HasShake
-  world.shake = newUniquePtr(Shake(duration: duration, strength: strength))
+  world.shake = (ref Shake)(duration: duration, strength: strength)
 
 proc mixTransform2d*(world: var World, entity: Entity, trworld = mat2d(), translation = vec2(0, 0),
       rotation = 0.Rad, scale = vec2(1, 1), parent = invalidId) =
