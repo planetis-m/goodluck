@@ -11,7 +11,6 @@ iterator queryAll*(world: World, parent: Entity, query: set[HasComponent]): Enti
     let entity = frontier.pop()
     if world.signature[entity] * query == query:
       yield entity
-
     var childId = hierarchy.head
     while childId != invalidId:
       template childHierarchy: untyped = world.hierarchy[childId.idx]

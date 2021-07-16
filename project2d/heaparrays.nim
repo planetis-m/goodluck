@@ -1,5 +1,6 @@
 import entities
 from typetraits import supportsCopyMem
+# No bounds checking, entity indices are guaranteed to be between bounds.
 
 type
   Array*[T] = object
@@ -13,7 +14,7 @@ proc `=destroy`*[T](x: var Array[T]) =
 proc `=copy`*[T](dest: var Array[T], src: Array[T]) {.error.}
 
 proc initArray*[T](): Array[T] =
-  result.data = cast[typeof(result.data)](alloc(maxEntities * sizeof(T)))
+  Array[T](data: cast[typeof(result.data)](alloc(maxEntities * sizeof(T))))
 
 template checkInit() =
   when compileOption("boundChecks"):
