@@ -15,7 +15,7 @@ type
 
   WrongSection = object of CatchableError
 
-proc raiseWrongSection*(expected: SectionKind) {.noinline, noreturn.} =
+proc raiseWrongSection*(expected: SectionKind) {.noinline.} =
   raise newException(WrongSection, "Section '" & $expected & "' expected.")
 
 template storeSlotSection(data) =
