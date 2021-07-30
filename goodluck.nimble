@@ -9,3 +9,4 @@ license     = "MIT"
 
 requires "nim >= 1.5.1"
 requires "bingo >= 0.3.0"
+requires "sdl2#head"

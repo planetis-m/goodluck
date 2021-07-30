@@ -14,7 +14,10 @@ proc `=destroy`*[T](x: var Array[T]) =
 proc `=copy`*[T](dest: var Array[T], src: Array[T]) {.error.}
 
 proc initArray*[T](): Array[T] =
-  Array[T](data: cast[typeof(result.data)](alloc(maxEntities * sizeof(T))))
+  when not supportsCopyMem(T):
+    result.data = cast[typeof(result.data)](alloc0(maxEntities * sizeof(T)))
+  else:
+    result.data = cast[typeof(result.data)](alloc(maxEntities * sizeof(T)))
 
 template checkInit() =
   when compileOption("boundChecks"):
