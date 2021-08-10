@@ -19,9 +19,14 @@ proc initArray*[T](): Array[T] =
   else:
     result.data = cast[typeof(result.data)](alloc(maxEntities * sizeof(T)))
 
+proc raiseNilAccess() {.noinline, noreturn.} =
+  raise newException(NilAccessDefect, "array not inititialized")
+
 template checkInit() =
   when compileOption("boundChecks"):
-    assert x.data != nil, "array not inititialized"
+    {.line.}:
+      if x.data == nil:
+        raiseNilAccess()
 
 template get(x, i) =
   checkInit()

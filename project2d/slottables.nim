@@ -18,15 +18,18 @@ proc initSlotTableOfCap*[T](capacity: Natural): SlotTable[T] =
   )
 
 proc len*[T](x: SlotTable[T]): int {.inline.} =
-  result = x.data.len
+  x.data.len
 
-proc contains*[T](x: SlotTable[T], e: Entity): bool =
-  result = e.idx < x.slots.len and
-      x.slots[e.idx].version == e.version
+proc contains*[T](x: SlotTable[T], e: Entity): bool {.inline.} =
+  e.idx < x.slots.len and x.slots[e.idx].version == e.version
+
+proc raiseRangeDefect() {.noinline, noreturn.} =
+  raise newException(RangeDefect, "SlotTable number of elements overflow")
 
 proc incl*[T](x: var SlotTable[T], value: T): Entity =
-  if x.len + 1 == maxEntities:
-    raise newException(RangeDefect, "SlotTable number of elements overflow")
+  when compileOption("boundChecks"):
+    if x.len + 1 == maxEntities:
+      raiseRangeDefect()
   let idx = x.freeHead
   if idx < x.slots.len:
     template slot: untyped = x.slots[idx]
