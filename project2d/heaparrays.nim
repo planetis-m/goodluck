@@ -19,17 +19,8 @@ proc initArray*[T](): Array[T] =
   else:
     result.data = cast[typeof(result.data)](alloc(maxEntities * sizeof(T)))
 
-proc raiseNilAccess() {.noinline, noreturn.} =
-  raise newException(NilAccessDefect, "array not inititialized")
-
-template checkInit() =
-  when compileOption("boundChecks"):
-    {.line.}:
-      if x.data == nil:
-        raiseNilAccess()
-
 template get(x, i) =
-  checkInit()
+  rangeCheck x.p != nil and i.idx < x.len
   x.data[i]
 
 proc `[]`*[T](x: Array[T]; i: Natural): lent T =
@@ -38,7 +29,7 @@ proc `[]`*[T](x: var Array[T]; i: Natural): var T =
   get(x, i)
 
 proc `[]=`*[T](x: var Array[T]; i: Natural; y: sink T) =
-  checkInit()
+  rangeCheck x.p != nil and i.idx < x.len
   x.data[i] = y
 
 proc clear*[T](x: Array[T]) =
@@ -46,5 +37,12 @@ proc clear*[T](x: Array[T]) =
     if x.data != nil:
       for i in 0..<maxEntities: reset(x[i])
 
-template toOpenArray*(x, first, last: typed): untyped =
-  toOpenArray(x.data, first, last)
+proc `@`*[T](x: Array[T]): seq[T] {.inline.} =
+  newSeq(result, x.len)
+  for i in 0..x.len-1: result[i] = x[i]
+
+template toOpenArray*(x: Array, first, last: int): untyped =
+  toOpenArray(x.p, first, last)
+
+template toOpenArray*(x: Array): untyped =
+  toOpenArray(x.data, 0, x.len-1)
