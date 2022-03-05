@@ -59,9 +59,9 @@ proc contains*[T, N](x, y: BitSet[T, N]): bool =
       return false
   result = true
 
-proc `*`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; intersect(x, y))
-proc `+`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; union(x, y))
-proc `-`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; diff(x, y))
+proc `*`*[T, N](x, y: BitSet[T, N]): BitSet[T, N] {.inline.} = (var x = x; intersect(x, y))
+proc `+`*[T, N](x, y: BitSet[T, N]): BitSet[T, N] {.inline.} = (var x = x; union(x, y))
+proc `-`*[T, N](x, y: BitSet[T, N]): BitSet[T, N] {.inline.} = (var x = x; diff(x, y))
 proc `<`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x) and not equals(x, y)
 proc `<=`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x)
 proc `==`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = equals(x, y)

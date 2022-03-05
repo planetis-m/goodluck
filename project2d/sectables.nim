@@ -14,14 +14,23 @@ proc `=destroy`*[T](x: var SecTable[T]) =
   if x.p != nil:
     when not supportsCopyMem(T):
       for i in 0..<x.len: `=destroy`(x.p[i])
-    deallocShared(x.p)
+    when compileOption("threads"):
+      deallocShared(x.p)
+    else:
+      dealloc(x.p)
 proc `=copy`*[T](dest: var SecTable[T], src: SecTable[T]) {.error.}
 
 proc newSecTable*[T](len = defaultInitialLen.Natural): SecTable[T] =
   when not supportsCopyMem(T):
-    result.p = cast[typeof(result.p)](allocShared0(len * sizeof(T)))
+    when compileOption("threads"):
+      result.p = cast[typeof(result.p)](allocShared0(len * sizeof(T)))
+    else:
+      result.p = cast[typeof(result.p)](alloc0(len * sizeof(T)))
   else:
-    result.p = cast[typeof(result.p)](allocShared(len * sizeof(T)))
+    when compileOption("threads"):
+      result.p = cast[typeof(result.p)](allocShared(len * sizeof(T)))
+    else:
+      result.p = cast[typeof(result.p)](alloc(len * sizeof(T)))
   result.len = len
 
 proc grow*[T](s: var SecTable[T], newLen: Natural) =
