@@ -1,4 +1,4 @@
-import sdlpriv, vmath, entities, slottables, heaparrays
+import sdlpriv, vmath, entities, slottables, heaparrays, bitsets
 export entities
 
 type
@@ -50,6 +50,8 @@ type
     translation*: Vec2 # local translation relative to the parent
     rotation*: Rad     # local rotation relative to the parent
     scale*: Vec2       # local scale relative to the parent
+
+  Signature* = BitSet[HasComponent, wordsFor(HasComponent)]
 
   World* = object
     signature*: SlotTable[set[HasComponent]]

@@ -4,68 +4,67 @@ type
   ElemType = uint
 
 const
-  ElemSize* = sizeof(uint) * 8
+  ElemSize = sizeof(ElemType) * 8
   One = ElemType(1)
   Zero = ElemType(0)
 
-proc wordsFor(n: Positive): int =
-  (n + ElemSize - 1) div ElemSize
+proc enumRange[T: enum](t: typedesc[T]): int =
+  high(T).ord - low(T).ord + 1
 
-const
-  componentsLen = high(HasComponent).ord - low(HasComponent).ord + 1
-  bitSetLen = wordsFor(componentsLen)
+proc wordsFor*[T: enum](t: typedesc[T]): int =
+  (enumRange(t) + ElemSize - 1) div ElemSize
 
 type
-  BitSet* = distinct array[bitSetLen, ElemType]
+  BitSet*[T: enum; N: static int] = distinct array[N, ElemType]
 
 template modElemSize(arg: untyped): untyped = arg.ord and (ElemSize - 1)
 template divElemSize(arg: untyped): untyped = arg.ord shr countTrailingZeroBits(ElemSize)
 
-template `[]`(x: BitSet, i: int): ElemType = array[bitSetLen, ElemType](x)[i]
+template `[]`(x: BitSet, i: int): ElemType = array[N, ElemType](x)[i]
 template `[]=`(x: BitSet, i: int, v: ElemType) =
-  array[bitSetLen, ElemType](x)[i] = v
+  array[N, ElemType](x)[i] = v
 
-proc contains*(x: BitSet, e: HasComponent): bool =
+proc contains*[T, N](x: BitSet[T, N], e: T): bool =
   result = (x[int(e.divElemSize)] and (One shl e.modElemSize)) != Zero
 
-proc incl*(x: var BitSet, elem: HasComponent) =
+proc incl*[T, N](x: var BitSet[T, N], elem: T) =
   x[int(elem.divElemSize)] = x[int(elem.divElemSize)] or
       (One shl elem.modElemSize)
 
-proc excl*(x: var BitSet, elem: HasComponent) =
+proc excl*[T, N](x: var BitSet[T, N], elem: T) =
   x[int(elem.divElemSize)] = x[int(elem.divElemSize)] and
       not(One shl elem.modElemSize)
 
-proc union*(x: var BitSet, y: BitSet) =
-  for i in 0..<bitSetLen: x[i] = x[i] or y[i]
+proc union*[T, N](x: var BitSet[T, N], y: BitSet[T, N]) =
+  for i in 0..<N: x[i] = x[i] or y[i]
 
-proc diff*(x: var BitSet, y: BitSet) =
-  for i in 0..<bitSetLen: x[i] = x[i] and not y[i]
+proc diff*[T, N](x: var BitSet[T, N], y: BitSet[T, N]) =
+  for i in 0..<N: x[i] = x[i] and not y[i]
 
-proc symDiff*(x: var BitSet, y: BitSet) =
-  for i in 0..<bitSetLen: x[i] = x[i] xor y[i]
+proc symDiff*[T, N](x: var BitSet[T, N], y: BitSet[T, N]) =
+  for i in 0..<N: x[i] = x[i] xor y[i]
 
-proc intersect*(x: var BitSet, y: BitSet) =
-  for i in 0..<bitSetLen: x[i] = x[i] and y[i]
+proc intersect*[T, N](x: var BitSet[T, N], y: BitSet[T, N]) =
+  for i in 0..<N: x[i] = x[i] and y[i]
 
-proc equals*(x, y: BitSet): bool =
-  for i in 0..<bitSetLen:
+proc equals*[T, N](x, y: BitSet[T, N]): bool =
+  for i in 0..<N:
     if x[i] != y[i]:
       return false
   result = true
 
-proc contains*(x, y: BitSet): bool =
-  for i in 0..<bitSetLen:
+proc contains*[T, N](x, y: BitSet[T, N]): bool =
+  for i in 0..<N:
     if (y[i] and not x[i]) != Zero:
       return false
   result = true
 
-proc `*`*(x, y: BitSet): bool {.inline.} = intersect(x, y)
-proc `+`*(x, y: BitSet): bool {.inline.} = union(x, y)
-proc `-`*(x, y: BitSet): bool {.inline.} = diff(x, y)
-proc `<`*(x, y: BitSet): bool {.inline.} = contains(y, x) and not equals(x, y)
-proc `<=`*(x, y: BitSet): bool {.inline.} = contains(y, x)
-proc `==`*(x, y: BitSet): bool {.inline.} = equals(x, y)
+proc `*`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; intersect(x, y))
+proc `+`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; union(x, y))
+proc `-`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; diff(x, y))
+proc `<`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x) and not equals(x, y)
+proc `<=`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x)
+proc `==`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = equals(x, y)
 
-proc bitset*(e: varargs[HasComponent]): BitSet =
+proc bitset*[T, N](e: varargs[T, N]): BitSet[T, N] =
   for val in items(e): result.incl(val)

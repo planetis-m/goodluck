@@ -2,6 +2,7 @@ import
   gametypes, slottables, vmath, heaparrays, std/streams, bingo
 from typetraits import distinctBase
 
+proc hasCustomSerializer*[T: distinct](t: typedesc[T]): bool = hasCustomSerializer(t.distinctBase)
 proc storeBin*[T: distinct](s: Stream; x: T) = storeBin(s, x.distinctBase)
 proc initFromBin[T: distinct](dst: var T; s: Stream) = initFromBin(dst.distinctBase, s)
 
