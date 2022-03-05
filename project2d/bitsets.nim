@@ -60,6 +60,9 @@ proc contains*(x, y: BitSet): bool =
       return false
   result = true
 
+proc `*`*(x, y: BitSet): bool {.inline.} = intersect(x, y)
+proc `+`*(x, y: BitSet): bool {.inline.} = union(x, y)
+proc `-`*(x, y: BitSet): bool {.inline.} = diff(x, y)
 proc `<`*(x, y: BitSet): bool {.inline.} = contains(y, x) and not equals(x, y)
 proc `<=`*(x, y: BitSet): bool {.inline.} = contains(y, x)
 proc `==`*(x, y: BitSet): bool {.inline.} = equals(x, y)
