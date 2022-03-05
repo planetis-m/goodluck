@@ -1,6 +1,6 @@
-import math, ".."/[gametypes, heaparrays, vmath, slottables, sdlpriv]
+import math, ".."/[gametypes, heaparrays, vmath, slottables, bitsets, utils, sdlpriv]
 
-const Query = {HasDraw2d, HasTransform2d}
+const Query = sig(HasDraw2d, HasTransform2d)
 const Tolerance = 0.75'f32
 
 proc update(game: var Game, entity: Entity) =
@@ -32,5 +32,5 @@ proc sysDraw2d*(game: var Game) =
   game.renderer.impl.setDrawColor(game.clearColor[0], game.clearColor[1], game.clearColor[2])
   game.renderer.impl.clear()
   for entity, signature in game.world.signature.pairs:
-    if signature * Query == Query:
+    if Query <= signature:
       update(game, entity)

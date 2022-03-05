@@ -1,6 +1,6 @@
-import ".."/[gametypes, heaparrays, vmath, builddsl, slottables], std/random
+import ".."/[gametypes, heaparrays, vmath, builddsl, slottables, bitsets, utils], std/random
 
-const Query = {HasTransform2d, HasShake}
+const Query = sig(HasTransform2d, HasShake)
 
 proc update(game: var Game, entity: Entity; delta: float32) =
   template transform: untyped = game.world.transform[entity.idx]
@@ -27,5 +27,5 @@ proc update(game: var Game, entity: Entity; delta: float32) =
 
 proc sysShake*(game: var Game; delta: float32) =
   let signature = game.world.signature[game.camera]
-  if signature * Query == Query:
+  if Query <= signature:
     update(game, game.camera, delta)

@@ -1,6 +1,6 @@
-import ".."/[gametypes, heaparrays, vmath, slottables], std/math
+import ".."/[gametypes, heaparrays, vmath, slottables, bitsets, utils], std/math
 
-const Query = {HasTransform2d, HasCollide}
+const Query = sig(HasTransform2d, HasCollide)
 
 proc computeAabb(transform: Transform2d, collide: var Collide) =
   collide.center = transform.world.origin
@@ -28,7 +28,7 @@ proc penetrateAabb(a, b: Collide): Vec2 =
 proc sysCollide*(game: var Game; delta: float32) =
   var allColliders: seq[Entity]
   for colliderId, signature in game.world.signature.pairs:
-    if signature * Query == Query:
+    if Query <= signature:
       template transform: untyped = game.world.transform[colliderId.idx]
       template collider: untyped = game.world.collide[colliderId.idx]
 

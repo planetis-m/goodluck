@@ -1,5 +1,5 @@
 import
-  gametypes, slottables, vmath, heaparrays, std/streams, bingo
+  gametypes, slottables, vmath, heaparrays, std/streams, bingo, bitsets
 from typetraits import distinctBase
 
 proc hasCustomSerializer*[T: distinct](t: typedesc[T]): bool = hasCustomSerializer(t.distinctBase)

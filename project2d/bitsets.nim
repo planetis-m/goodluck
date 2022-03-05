@@ -65,6 +65,3 @@ proc `-`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = (var x = x; diff(x, y))
 proc `<`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x) and not equals(x, y)
 proc `<=`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = contains(y, x)
 proc `==`*[T, N](x, y: BitSet[T, N]): bool {.inline.} = equals(x, y)
-
-proc bitset*[T, N](e: varargs[T, N]): BitSet[T, N] =
-  for val in items(e): result.incl(val)

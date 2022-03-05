@@ -1,6 +1,6 @@
-import ".."/[gametypes, heaparrays, utils, builddsl, slottables]
+import ".."/[gametypes, heaparrays, utils, builddsl, slottables, bitsets]
 
-const Query = {HasTransform2d, HasFade, HasDraw2d}
+const Query = sig(HasTransform2d, HasFade, HasDraw2d)
 
 proc update(game: var Game, entity: Entity; delta: float32) =
   template transform: untyped = game.world.transform[entity.idx]
@@ -20,5 +20,5 @@ proc update(game: var Game, entity: Entity; delta: float32) =
 
 proc sysFade*(game: var Game; delta: float32) =
   for entity, signature in game.world.signature.pairs:
-    if signature * Query == Query:
+    if Query <= signature:
       update(game, entity, delta)

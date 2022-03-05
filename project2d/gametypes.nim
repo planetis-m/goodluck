@@ -54,7 +54,7 @@ type
   Signature* = BitSet[HasComponent, wordsFor(HasComponent)]
 
   World* = object
-    signature*: SlotTable[set[HasComponent]]
+    signature*: SlotTable[Signature]
 
     collide*: Array[Collide]
     draw2d*: Array[Draw2d]
