@@ -296,7 +296,7 @@ are skipped.
 
   proc sysMove*(game: var Game) =
     for entity, signature in game.world.signatures.pairs:
-      if signature * Query == Query:
+      if Query <= signature:
         update(game, entity)
 
 
@@ -344,7 +344,7 @@ Compute the current world position of each entity after it was changed by `sysMo
     var frontier = @[parent]
     while frontier.len > 0:
       let entity = frontier.pop()
-      if db.signatures[entity] * query == query:
+      if query <= db.signatures[entity]:
         yield entity
       var childId = hierarchy.head
       while childId != invalidId:

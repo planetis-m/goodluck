@@ -8,8 +8,7 @@ task "docs", "Generate documentation":
     src = "rstdocs" / name
     doc = dir / name.changeFileExt(".html")
   if doc.needsRefresh(src):
-    echo "Generating the docs..."
-    direShell(nimExe,
+    direSilentShell("Generating the docs...", nimExe,
         &"rst2html --verbosity:0 --out:{dir} {src}")
   else:
     echo "Skipped generating the docs."
