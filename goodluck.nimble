@@ -7,6 +7,6 @@ license     = "MIT"
 
 # Deps
 
-requires "nim >= 1.5.1"
-requires "bingo >= 0.3.0"
+requires "nim >= 1.6.0"
+requires "bingo#83f0924"
 requires "sdl2#head"
