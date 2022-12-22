@@ -9,6 +9,6 @@ task "docs", "Generate documentation":
     doc = dir / name.changeFileExt(".html")
   if doc.needsRefresh(src):
     direSilentShell("Generating the docs...",
-        &"nim rst2html --out:{dir} {src}")
+        &"nim rst2html --project --out:{dir} {src}")
   else:
     echo "Skipped generating the docs."
