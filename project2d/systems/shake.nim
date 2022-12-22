@@ -1,6 +1,6 @@
-import ".."/[gametypes, heaparrays, vmath, builddsl, slottables, bitsets, utils], std/random
+import ".."/[gametypes, heaparrays, vmath, builddsl, slottables, utils], std/random
 
-const Query = sig(HasTransform2d, HasShake)
+const Query = {HasTransform2d, HasShake}
 
 proc update(game: var Game, entity: Entity; delta: float32) =
   template transform: untyped = game.world.transform[entity.idx]

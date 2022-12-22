@@ -58,11 +58,11 @@ proc reserve[T](x: var SecTable[T]; i: int) {.inline.} =
 proc len*[T](s: SecTable[T]): int {.inline.} = s.len
 
 proc `[]`*[T](x: SecTable[T]; i: Natural): lent T =
-  rangeCheck x.p != nil and i.idx < x.len
+  rangeCheck i.idx < x.len
   x.p[i.idx]
 
 proc `[]`*[T](x: var SecTable[T]; i: Natural): var T =
-  rangeCheck x.p != nil and i.idx < x.len
+  rangeCheck i.idx < x.len
   x.p[i.idx]
 
 proc `[]=`*[T](x: var SecTable[T]; i: Natural; y: sink T) =

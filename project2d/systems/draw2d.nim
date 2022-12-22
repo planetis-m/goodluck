@@ -1,6 +1,6 @@
-import math, ".."/[gametypes, heaparrays, vmath, slottables, bitsets, utils, sdlpriv]
+import math, ".."/[gametypes, heaparrays, vmath, slottables, utils, sdlpriv]
 
-const Query = sig(HasDraw2d, HasTransform2d)
+const Query = {HasDraw2d, HasTransform2d}
 const Tolerance = 0.75'f32
 
 proc update(game: var Game, entity: Entity) =

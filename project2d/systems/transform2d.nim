@@ -1,6 +1,6 @@
-import ".." / [gametypes, heaparrays, vmath, mixins, utils, slottables, bitsets]
+import ".." / [gametypes, heaparrays, vmath, mixins, utils, slottables]
 
-const Query = sig(HasTransform2d, HasHierarchy, HasDirty)
+const Query = {HasTransform2d, HasHierarchy, HasDirty}
 
 proc update(world: var World, entity: Entity; delta: float32) =
   template `?=`(name, value): bool = (let name = value; name != invalidId)
