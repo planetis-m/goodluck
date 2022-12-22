@@ -9,22 +9,21 @@ An introduction to ECS by example
 
 .. contents::
 
-In this post I'm exploring the inner workings of an strict ECS implementation,
-discuss the costs/benefits of each choice with the reader and hopefully answer
-the question whether this programming pattern can be easily applied in domains
-other than games.
+In this post I'm exploring the inner workings of an strict ECS implementation, discuss the
+costs/benefits of each choice with the reader and hopefully answer the question whether
+this programming pattern can be easily applied in domains other than games.
 
 What is an ECS
 ==============
 
-A pattern used in high-end game engines, simulations, visual FX, CAD/CAM and
-other programs. The acronym stands for Entity-Component-System and these are
-the building blocks of an ECS. This architecture uses composition, rather
-than inheritance. Generally used in top-tier applications where performance
-is paramount, while remaining relatively unknown for smaller projects.
+A pattern used in high-end game engines, simulations, visual FX, CAD/CAM and other
+programs. The acronym stands for Entity-Component-System and these are the building blocks
+of an ECS. This architecture uses composition, rather than inheritance. It is generally
+used in top-tier applications where performance is paramount, while remaining relatively
+unknown for smaller projects.
 
-The performance advantage over the traditional OOP approach, is achieved by
-more efficiently leveraging the CPU instruction and data caches.
+The performance advantage over the traditional OOP approach, is achieved by more
+efficiently leveraging the CPU instruction and data caches.
 
 In the next sections the design of a simple game is presented.
 
@@ -32,8 +31,8 @@ Components
 ==========
 
 To model simple movement, the main components are movement and transformations.
-`Transform2d` is used to allow entities to be positioned in the world, while
-`Move` to handle movevement. These can be modelled with plain objects:
+`Transform2d` is used to allow entities to be positioned in the world, while `Move` to
+handle movevement updates. These can be modelled with plain objects:
 
 .. code-block:: nim
 
@@ -51,15 +50,14 @@ To model simple movement, the main components are movement and transformations.
 
 
 Why use an `array[10, Entity]`:nim:, you might ask. Well using types that reference
-memory, such as `seq` is entirely possible. However that breaks the
-promise of data locality, that the strict ECS pattern requires.
+memory, such as `seq` is entirely possible. However that breaks the promise of data
+locality, that the strict ECS pattern requires.
 
 Storing components
 ------------------
 
-That's why everything is stored in linear arrays. Note that for now these are
-sparsely populated and thus space inefficient, their index is explained in
-`Populating the world`_.
+That's why everything is stored in linear arrays. Note that for now these are sparsely
+populated and thus space inefficient, their index is explained in `Populating the world`_.
 
 .. code-block:: nim
 
@@ -73,15 +71,14 @@ sparsely populated and thus space inefficient, their index is explained in
       transforms*: Array[Transform2d]
 
 
-Notice `cameraShake` being a singleton component uses a `ref` instead.
+Notice that `cameraShake` being a singleton component, uses a `ref` instead.
 
-**Note**: In Nim it's easy to create a custom fixed-size heap array, which is
-also automatically memory managed. Writing destructor hooks is explained in this
-`document <https://nim-lang.github.io/Nim/destructors.html>`_.
+**Note**: In Nim it's easy to create a custom fixed-size heap array, which is also
+automatically memory managed. Writing destructor hooks is explained in this `document
+<https://nim-lang.github.io/Nim/destructors.html>`_.
 
-For each component I manually declare a corresponding enum value used to
-declare a "has-a" relationship, the usage is explored in the section
-`Entity's signature`_.
+For each component I manually declare a corresponding enum value used to declare a "has-a"
+relationship, the usage is explored in the section `Entity's signature`_.
 
 .. code-block:: nim
 
@@ -102,19 +99,17 @@ A distinct id representing a separate item in the world. It's implemented as:
   type Entity* = distinct uint16
 
 
-That posses a restriction on the maximum number of entities that can exist and
-will be discussed later_.
+That posses a restriction on the maximum number of entities that can exist and will be
+discussed later_.
 
 Association
 -----------
 
-Transforms can have child transforms attached to them. This is used to group
-entities into larger wholes (e.g. a character is a hierarchy of body parts).
-A scene graph provides a method to transform a child node transform with
-respect to its parent node transform.
+Transforms can have child transforms attached to them. This is used to group entities into
+larger wholes (e.g. a character is a hierarchy of body parts). A scene graph provides a
+method to transform a child node transform with respect to its parent node transform.
 
-How would a child be linked to their parent? Using their `Entity` handle
-of course:
+How would a child be linked to their parent? Using their `Entity` handle of course:
 
 .. code-block:: nim
 
@@ -124,16 +119,16 @@ of course:
       children*: array[10, Entity]
 
 
-However this sets a hard limit in the number of children, I describe how to overcome
-that in `Unconstrained Hiearchies`_.
+However this sets a hard limit in the number of children, I describe how to overcome that
+in `Unconstrained Hiearchies`_.
 
 Entity management
 -----------------
 
-The next unanswered question might be, how to verify if an Entity is referring to
-live data? To test an entity's validity I rely on a specialized data structure
-called a `SlotTable`. You can insert a value and will be given a unique key which
-can be used to retrieve this value.
+The next unanswered question might be, how to verify if an Entity is referring to live
+data? To test an entity's validity I rely on a specialized data structure called a
+`SlotTable`. You can insert a value and will be given a unique key which can be used to
+retrieve this value.
 
 .. code-block:: nim
 
@@ -144,15 +139,15 @@ can be used to retrieve this value.
   echo ent # Entity(i: 0, v: 1)
 
 
-A `SlotTable` guarantees that keys to erased values won't work by incrementing a
-counter. Meaning that the `version` of the internal slot referring to the value
-and that of the key's, must be equal. When a value is deleted, the slot's version
-is incremented, invalidating the key.
+A `SlotTable` guarantees that keys to erased values won't work by incrementing a counter.
+Meaning that the `version` of the internal slot referring to the value and that of the
+key's, must be equal. When a value is deleted, the slot's version is incremented,
+invalidating the key.
 
 .. _later:
 
-This is implemented by storing the version in the higher bits of the number.
-Using bitwise operations to retrieve a key's version:
+This is implemented by storing the version in the higher bits of the number. Using bitwise
+operations to retrieve a key's version:
 
 .. code-block:: nim
 
@@ -166,17 +161,16 @@ Using bitwise operations to retrieve a key's version:
   echo ent1.version # 1
 
 
-This limits the available bits used for indexing. A wider unsigned type can be
-used if more entities are needed. In which case a `SparseSet`, a data-structure
-that keeps the values in a dense internal container, should be used for storing the
-components.
+This limits the available bits used for indexing. A wider unsigned type can be used if
+more entities are needed. In which case a `SparseSet`, a data-structure that keeps the
+values in a dense internal container, should be used for storing the components.
 
 Entity's signature
 ------------------
 
-The `SlotTable` is used to store a dense sequence of `set[HasComponent]` which is
-the signature for each entity. A signature is a bitset describing the component
-composition of an entity. How this is used, is explained in `Systems`_.
+The `SlotTable` is used to store a dense sequence of `set[HasComponent]` which is the
+signature for each entity. A signature is a bitset describing the component composition of
+an entity. How this is used, is explained in `Systems`_.
 
 .. code-block:: nim
 
@@ -190,9 +184,8 @@ Populating the world
 --------------------
 
 The entity returned by the `SlotTable` can be used as an index for the "secondary"
-component arrays. As you can imagine, these arrays can contain holes as entities
-are created and deleted, however the `SlotTable` is reusing entities as they become
-available.
+component arrays. As you can imagine, these arrays can contain holes as entities are
+created and deleted, however the `SlotTable` is reusing entities as they become available.
 
 .. code-block:: nim
 
@@ -209,8 +202,8 @@ available.
 
 
 For example, to create a new entity that has `Transform2d`, `Move` insert
-`{HasTransform2d, HasMove}` in `signatures`. Then using the entity's index,
-set the corresponding items in the `world.transforms`, `world.moves`  arrays.
+`{HasTransform2d, HasMove}` in `signatures`. Then using the entity's index, set the
+corresponding items in the `world.transforms`, `world.moves` arrays.
 
 .. code-block:: nim
 
@@ -226,9 +219,9 @@ set the corresponding items in the `world.transforms`, `world.moves`  arrays.
 Unconstrained Hiearchies
 ------------------------
 
-There is a one-to-many association between parent `Transform2D` and its children
-and can be implemented efficiently with another component, the `Hierarchy`. Read
-`Systems`_ for how to traverse `Hierarchy`.
+There is a one-to-many association between parent `Transform2D` and its children and can
+be implemented efficiently with another component, the `Hierarchy`. Read `Systems`_ for
+how to traverse `Hierarchy`.
 
 .. code-block:: nim
 
@@ -239,8 +232,8 @@ and can be implemented efficiently with another component, the `Hierarchy`. Read
       parent*: Entity      # the parent, if any.
 
 
-This is a standard textbook algorithm for prepending nodes in a linked list. It
-is adapted it to work with the `Entity` type instead of pointers.
+This is a standard textbook algorithm for prepending nodes in a linked list. It is adapted
+it to work with the `Entity` type instead of pointers.
 
 .. code-block:: nim
 
@@ -254,8 +247,8 @@ is adapted it to work with the `Entity` type instead of pointers.
     parent.head = entity
 
 
-There can be multiple hierarchy arrays, e.g. one for the model and another for
-entity scene graphs.
+There can be multiple hierarchy arrays, e.g. one for the model and another for entity
+scene graphs.
 
 .. code-block:: nim
 
@@ -266,8 +259,8 @@ entity scene graphs.
       worldSpace*: Array[Hierarchy]
 
 
-In order to achieve good memory efficiency and iteration speed, sorting the
-hiearchies by `parent` is needed. A `SparseSet` should be used in that case.
+In order to achieve good memory efficiency and iteration speed, sorting the hiearchies by
+`parent` is needed. A `SparseSet` should be used in that case.
 
 Mixins
 ------
@@ -285,10 +278,9 @@ Components can be seen as a mixin idiom, classes that can be "included" rather
 Systems
 =======
 
-The missing piece of the puzzle, is the code that works on entities having a
-certain set of components. These are encoded another bitset called `Query` and
-when iterating over all entities, the ones whose signature doesn't contain `Query`,
-are skipped.
+The missing piece of the puzzle, is the code that works on entities having a certain set
+of components. These are encoded another bitset called `Query` and when iterating over all
+entities, the ones whose signature doesn't contain `Query`, are skipped.
 
 .. code-block:: nim
 
@@ -307,8 +299,8 @@ to overcome this problem.
 Tags
 ----
 
-Sometimes values are added to `HasComponent` without a companion component. They are
-used to efficiently trigger further processing or signal a result.
+Sometimes values are added to `HasComponent` without a companion component. They are used
+to efficiently trigger further processing or signal a result.
 
 .. code-block:: nim
 
@@ -333,8 +325,8 @@ Tags are added/removed at run-time without a cost:
       world.signatures[entity].incl HasDirty
 
 
-The normal way to send data between systems is to store the data in components.
-Compute the current world position of each entity after it was changed by `sysMove`:
+The normal way to send data between systems is to store the data in components. Compute
+the current world position of each entity after it was changed by `sysMove`:
 
 .. code-block:: nim
 
@@ -363,8 +355,8 @@ Compute the current world position of each entity after it was changed by `sysMo
         transform.world = local
 
 
-`transform.world` is then accessed by `sysDraw` in order to display each
-entity to the screen and so on.
+`transform.world` is then accessed by `sysDraw` in order to display each entity to the
+screen and so on.
 
 Summary
 =======
