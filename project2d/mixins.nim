@@ -1,4 +1,4 @@
-import gametypes, heaparrays, vmath, utils, slottables, bitsets
+import gametypes, heaparrays, vmath, utils, slottables
 
 template mixBody(has) =
   world.signature[entity].incl has
