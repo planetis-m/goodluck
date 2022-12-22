@@ -10,7 +10,7 @@ proc initGame*(windowWidth, windowHeight: int32): Game =
   let renderer = newRenderer(window, -1, RendererAccelerated or RendererPresentVsync)
 
   let world = World(
-    signature: initSlotTableOfCap[Signature](maxEntities),
+    signature: initSlotTableOfCap[set[HasComponent]](maxEntities),
     collide: initArray[Collide](),
     draw2d: initArray[Draw2d](),
     fade: initArray[Fade](),
@@ -57,6 +57,7 @@ proc run(game: var Game) =
     if not game.isRunning: break
     let now = getMonoTime().ticks
     game.update(float32(now - lastTime) / 1_000_000_000'f32)
+    game.render()
     lastTime = now
 
 proc main =

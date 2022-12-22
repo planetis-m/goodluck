@@ -1,12 +1,9 @@
-import gametypes, slottables, heaparrays, bitsets
-
-proc sig*(e: varargs[HasComponent]): Signature =
-  for val in items(e): result.incl(val)
+import gametypes, slottables, heaparrays
 
 proc createEntity*(world: var World): Entity =
-  result = world.signature.incl(default(Signature))
+  result = world.signature.incl({})
 
-iterator queryAll*(world: World, parent: Entity, query: Signature): Entity =
+iterator queryAll*(world: World, parent: Entity, query: set[HasComponent]): Entity =
   template hierarchy: untyped = world.hierarchy[entity.idx]
 
   var frontier = @[parent]
@@ -46,7 +43,7 @@ proc removeNode*(world: var World, entity: Entity) =
   if prevSiblingId ?= hierarchy.prev: prevSibling.next = hierarchy.next
 
 proc delete*(game: var Game, entity: Entity) =
-  for entity in queryAll(game.world, entity, sig(HasHierarchy)):
+  for entity in queryAll(game.world, entity, {HasHierarchy}):
     removeNode(game.world, entity)
     game.toDelete.add(entity)
   #else: game.toDelete.add(entity)

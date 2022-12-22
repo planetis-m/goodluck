@@ -3,7 +3,7 @@ type
   EntityImpl* = uint16
 
 const
-  versionBits = 3
+  versionBits = 4
   versionMask = 1 shl versionBits - 1
   indexBits = sizeof(Entity) * 8 - versionBits
   indexMask = 1 shl indexBits - 1

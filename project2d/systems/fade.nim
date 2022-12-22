@@ -1,6 +1,6 @@
-import ".."/[gametypes, heaparrays, utils, builddsl, slottables, bitsets]
+import ".."/[gametypes, heaparrays, utils, builddsl, slottables]
 
-const Query = sig(HasTransform2d, HasFade, HasDraw2d)
+const Query = {HasTransform2d, HasFade, HasDraw2d}
 
 proc update(game: var Game, entity: Entity; delta: float32) =
   template transform: untyped = game.world.transform[entity.idx]
