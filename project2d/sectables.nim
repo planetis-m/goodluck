@@ -10,7 +10,7 @@ type
     len: int
     p: ptr UncheckedArray[T]
 
-proc `=destroy`*[T](x: var SecTable[T]) =
+proc `=destroy`*[T](x: SecTable[T]) =
   if x.p != nil:
     when not supportsCopyMem(T):
       for i in 0..<x.len: `=destroy`(x.p[i])
@@ -18,6 +18,7 @@ proc `=destroy`*[T](x: var SecTable[T]) =
       deallocShared(x.p)
     else:
       dealloc(x.p)
+proc `=dup`*[T](src: SecTable[T]): SecTable[T] {.error.}
 proc `=copy`*[T](dest: var SecTable[T], src: SecTable[T]) {.error.}
 
 proc newSecTable*[T](len = defaultInitialLen.Natural): SecTable[T] =

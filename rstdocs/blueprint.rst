@@ -24,7 +24,7 @@ The `build` macro composes with all of Nim's control flow constructs.
 
   proc getExplosion*(world: var World, parent: Entity, x, y: float32): Entity =
     let explosions = 32
-    let step = (Pi * 2.0) / explosions.float
+    let step = Tau / explosions.float
     let fadeStep = 0.05
     result = world.build:
       blueprint(id = explosion):
@@ -38,7 +38,6 @@ The `build` macro composes with all of Nim's control flow constructs.
                 Draw2d(width: 20, height: 20, color: [255'u8, 255, 255, 255])
                 Fade(step: fadeStep)
                 Move(direction: Vec2(x: sin(step * i.float), y: cos(step * i.float)), speed: 20.0)
-
 
 It expands to:
 

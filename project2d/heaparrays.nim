@@ -5,7 +5,7 @@ type
   Array*[T] = object
     p: ptr array[maxEntities, T]
 
-proc `=destroy`*[T](x: var Array[T]) =
+proc `=destroy`*[T](x: Array[T]) =
   if x.p != nil:
     when not supportsCopyMem(T):
       for i in 0..<maxEntities: `=destroy`(x[i])
@@ -13,6 +13,7 @@ proc `=destroy`*[T](x: var Array[T]) =
       deallocShared(x.p)
     else:
       dealloc(x.p)
+proc `=dup`*[T](src: Array[T]): Array[T] {.error.}
 proc `=copy`*[T](dest: var Array[T], src: Array[T]) {.error.}
 
 proc initArray*[T](): Array[T] =
